@@ -1,0 +1,91 @@
+// frontend/src/pages/login.tsx
+
+import { useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'next/router';
+import '/styles/globals.css';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Pegamos os dados e ações do nosso store (agora mockado)
+  const { login, isLoading, accessToken, user } = useAuthStore();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await login({ email, password });
+  };
+
+  // Se o login "fake" funcionar, vamos para o dashboard
+  if (accessToken) {
+    router.push('/dashboard'); // Redireciona para a página de logado
+    return (
+      <div className="p-5">
+        <h1>Logado com sucesso!</h1>
+        <p>Bem-vindo, {user?.email}</p>
+        <p>Redirecionando...</p>
+      </div>
+    );
+  }
+
+  // O formulário com TailwindCSS
+  return (
+    // 1. O Wrapper de Fundo (Tela Cheia)
+    //    Aplica a nova imagem, cobre a tela e centraliza
+    <main className="flex items-center justify-center min-h-screen w-full 
+                   bg-login-background bg-cover bg-center">
+
+      {/* 2. O Cartão do Formulário (Centralizado) */}
+      {/* A opacidade faz o fundo "vazar" um pouco, fica moderno */}
+      <div className="max-w-md w-full p-6 rounded-lg shadow-xl 
+                     bg-gray-900 bg-opacity-80 backdrop-blur-sm">
+
+        <h1 className="text-2xl font-bold mb-6 text-center text-white">Login</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-300">
+              Email:
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full p-2 rounded bg-gray-700 border border-gray-600 
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            />
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-300">
+              Senha:
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full p-2 rounded bg-gray-700 border border-gray-600 
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2 px-4 bg-blue-600 rounded cursor-pointer
+                       hover:bg-blue-700 transition duration-300
+                       disabled:bg-gray-500 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Carregando...' : 'Entrar'}
+          </button>
+        </form>
+      </div>
+
+    </main>
+  );
+}

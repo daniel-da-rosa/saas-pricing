@@ -1,11 +1,28 @@
-__pycache__/
+# -- Ambientes e Segredos --
+# Ignora todos os arquivos .env, em qualquer lugar
+**/.env
+**/.env.*
+**/__pycache__/
+
+# -- Python & Django --
 *.pyc
-.env
-.env.local
-node_modules/
-.next/
+/staticfiles/
+/mediafiles/
 db.sqlite3
 venv/
+
+# -- Node.js --
+
+**/node_modules
+.npm
+npm-debug.log*
+
+# -- Next.js --
+
+/frontend/.next/
+
+# -- Editor / OS --
 .vscode/
 .idea/
+.DS_Store
 *.sql

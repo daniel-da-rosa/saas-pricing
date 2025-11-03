@@ -1,0 +1,9 @@
+/* frontend/src/styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Opcional: define a cor de fundo e do texto padrão */
+body {
+  @apply bg-gray-900 text-white;
+}

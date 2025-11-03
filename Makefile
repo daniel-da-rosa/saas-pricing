@@ -14,37 +14,40 @@ help:
 	@echo "  make createsuperuser - Criar superusuário"
 
 build:
-	docker-compose build
+	docker compose build
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 down:
-	docker-compose down
+	docker compose down
 
 restart:
-	docker-compose restart
+	docker compose restart
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-backend:
-	docker-compose logs -f backend
+	docker compose logs -f backend
 
 logs-frontend:
-	docker-compose logs -f frontend
+	docker compose logs -f frontend
 
 shell-backend:
-	docker-compose exec backend python manage.py shell
+	docker compose exec backend python manage.py shell
 
 migrate:
-	docker-compose exec backend python manage.py migrate
+	docker compose exec backend python manage.py migrate
 
 makemigrations:
-	docker-compose exec backend python manage.py makemigrations
+	docker compose exec backend python manage.py makemigrations
 
 createsuperuser:
-	docker-compose exec backend python manage.py createsuperuser
+	docker compose exec backend python manage.py createsuperuser
 
 ps:
-	docker-compose ps
+	docker compose ps
+
+clean:
+	docker compose down -v
