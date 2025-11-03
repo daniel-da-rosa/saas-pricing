@@ -82,7 +82,21 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api
     depends_on:
       - backend
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: saas_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"  # Acessaremos o pgAdmin em http://localhost:5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres: # Garante que o pgAdmin só inicie depois do banco
+        condition: service_healthy # Espera o healthcheck do postgres passar
 
 volumes:
   postgres_data:
   redis_data:
+  pgadmin_data:
