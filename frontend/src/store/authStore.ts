@@ -25,14 +25,14 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
 
             // --- FUNÇÃO DE LOGIN CORRIGIDA ---
-            login: async (email, password) => { // <-- MUDANÇA AQUI
+            login: async (email, password) => {
                 set({ isLoading: true });
 
                 try {
                     // 1. CHAMA A API REAL
-                    const response = await api.post('/auth/login/', { 
-                        email, 
-                        password 
+                    const response = await api.post('/auth/login/', {
+                        email,
+                        password
                     });
 
                     // 2. PEGA AS CHAVES CORRETAS
@@ -45,13 +45,18 @@ export const useAuthStore = create<AuthState>()(
                         isLoading: false,
                     });
 
+                    // 🚨 NOVO: SALVA A CHAVE EXATA QUE O AXIOS ESPERA!
+                    localStorage.setItem('access_token', tokens.access);
+                    // Você pode salvar o refresh_token aqui também
+                    localStorage.setItem('refresh_token', tokens.refresh);
+
                     console.log('Login REAL bem-sucedido!', response.data);
 
                 } catch (error: any) {
                     // 4. LIDA COM ERROS REAIS E LANÇA O ERRO
                     console.error('Erro no login REAL:', error.response?.data || error.message);
                     set({ isLoading: false });
-                    
+
                     // IMPORTANTE: Lance o erro para o componente capturar
                     throw new Error(error.response?.data?.message || 'Falha no login');
                 }

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'subscriptions',
     'payments',
     'pricing',
+    'quotes',
 ]
 
 # Custom User Model

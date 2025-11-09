@@ -6,13 +6,17 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from subscriptions.views import PlanViewSet, SubscriptionViewSet
 from payments.views import PaymentViewSet
-from users.views import SocialLoginRedirectView  # ADICIONE ESTA LINHA
+from users.views import SocialLoginRedirectView 
+#from quotes.views import OrcamentoViewSet
+from pricing.views import ProdutoViewSet, ComposicaoViewSet
 
 # Router para ViewSets
 router = DefaultRouter()
 router.register(r'plans', PlanViewSet, basename='plan')
 router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 router.register(r'payments', PaymentViewSet, basename='payment')
+router.register(r'produtos', ProdutoViewSet, basename='produto')
+router.register(r'composicoes', ComposicaoViewSet, basename='composicao')
 
 urlpatterns = [
     path('', lambda r: redirect('api/', permanent=False)),

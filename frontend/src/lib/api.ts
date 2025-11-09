@@ -11,7 +11,20 @@ const api = axios.create({
 
 // Interceptor para adicionar token em requisições
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
+  // 🚨 CORREÇÃO PRINCIPAL: Lê o token do objeto JSON persistido pelo Zustand
+  const storedState = localStorage.getItem('auth-storage');
+  let token: string | null = null;
+
+  if (storedState) {
+    try {
+      // O token está aninhado em 'state.accessToken' dentro do JSON de 'auth-storage'
+      const parsedState = JSON.parse(storedState);
+      token = parsedState.state.accessToken;
+    } catch (error) {
+      console.error('Erro ao ler auth-storage:', error);
+    }
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,10 +36,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
@@ -35,23 +48,39 @@ api.interceptors.response.use(
           // localStorage.setItem('access_token', data.access);
           // return api(originalRequest);
         } catch (err) {
+          // ATENÇÃO: Se o refresh falhar, limpe TUDO para deslogar
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
+          // Opcional: Remover a chave principal do Zustand para logout completo
+          localStorage.removeItem('auth-storage');
           window.location.href = '/login';
         }
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
 
 export default api;
 
+export interface Produto {
+  id: number;
+  nome: string;
+  codigo_sku: string;
+  tipo: 'MP' | 'PA' | 'SV' | 'SB'; // Matéria-Prima, Produto Acabado, etc.
+  unidade_medida: string;
+  preco_custo: string; // Vem como string, precisa converter para número
+  is_active: boolean;
+}
+
+// Tipo para criar um novo produto (não precisa de ID ou empresa)
+export type NovoProduto = Omit<Produto, 'id' | 'is_active'>;
+
 // Funções de API
 export const authAPI = {
   register: (data: any) => api.post('/auth/register/', data),
-  login: (email: string, password: string) => 
+  login: (email: string, password: string) =>
     api.post('/auth/login/', { email, password }),
   getProfile: () => api.get('/auth/profile/'),
 };
@@ -70,4 +99,59 @@ export const subscriptionsAPI = {
 
 export const paymentsAPI = {
   list: () => api.get('/payments/'),
+};
+
+export interface ItemComposicao {
+  id?: number;
+  componente: number; // ID do Produto (FK para Produto, ex: Farinha)
+  quantidade: number;
+}
+
+export interface Composicao {
+  id: number;
+  produto_acabado: number; // ID do Produto Acabado (PA) que esta receita define
+  descricao: string;
+  custo_adicional_fixo: string;
+  itens: ItemComposicao[]; // A lista de ingredientes
+}
+
+export type NovaComposicao = Omit<Composicao, 'id'>;
+
+// ... (Adicionar no final do arquivo, com as outras APIs) ...
+export const composicoesAPI = {
+  list: () => api.get<Composicao[]>('/composicoes/'),
+
+  create: (data: NovaComposicao) => api.post<Composicao>('/composicoes/', data),
+
+  update: (id: number, data: NovaComposicao) =>
+    api.put<Composicao>(`/composicoes/${id}/`, data),
+
+  delete: (id: number) => api.delete(`/composicoes/${id}/`),
+};
+
+export const produtosAPI = {
+  /**
+   * Busca a lista de todos os produtos da empresa logada
+   * (GET /api/produtos/)
+   */
+  list: () => api.get<Produto[]>('/produtos/'),
+
+  /**
+   * Cria um novo produto no backend
+   * (POST /api/produtos/)
+   */
+  create: (data: NovoProduto) => api.post<Produto>('/produtos/', data),
+
+  /**
+   * Atualiza um produto existente no backend
+   * (PUT /api/produtos/{id}/)
+   */
+  update: (id: number, data: Partial<NovoProduto>) =>
+    api.put<Produto>(`/produtos/${id}/`, data),
+
+  /**
+   * Deleta um produto do backend
+   * (DELETE /api/produtos/{id}/)
+   */
+  delete: (id: number) => api.delete(`/produtos/${id}/`),
 };
