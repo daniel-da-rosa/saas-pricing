@@ -1,48 +1,42 @@
-// frontend/src/pages/dashboard/produtos.tsx
+"use client";
 import React, { useState, useEffect } from 'react';
 import { produtosAPI, Produto } from '../../lib/api';
-import DashboardLayout from '../../components/DashboardLayoutModerno';
-import { Package, Plus, Trash2, Edit, Search, AlertCircle } from 'lucide-react';
-
-// Tipo base para o formulário (sem o ID, pois ele é adicionado/usado apenas na edição/deleção)
-interface ProdutoFormData {
-    nome: string;
-    codigo_sku: string;
-    tipo: 'MP' | 'PA' | 'SV' | 'SB' | string; // Permitindo string para flexibilidade
-    unidade_medida: string;
-    preco_custo: string; // Mantido como string para entrada de input
-}
-
-const initialFormData: ProdutoFormData = {
-    nome: '',
-    codigo_sku: '',
-    tipo: 'MP',
-    unidade_medida: '',
-    preco_custo: '0.00'
-};
+import DashboardLayoutModerno from '../../components/DashboardLayoutModerno';
+import { Search, Plus, Edit2, Trash2, X, Package } from 'lucide-react';
 
 const PaginaProdutos = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
+    const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [formData, setFormData] = useState<ProdutoFormData>(initialFormData);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formError, setFormError] = useState<string | null>(null);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
-    // NOVO: Estado para rastrear o produto em edição
-    const [editingProduto, setEditingProduto] = useState<Produto | null>(null);
+    // Form state
+    const [formData, setFormData] = useState({
+        nome: '',
+        codigo_sku: '',
+        tipo: 'PA',
+        preco_custo: '',
+        unidade_medida: '',
+    });
 
-    // Função para buscar os produtos na API
     const carregarProdutos = async () => {
         setIsLoading(true);
         setError(null);
+
         try {
             const response = await produtosAPI.list();
-            setProdutos(response.data);
+            setProdutos(response.data || []);
+            setProdutosFiltrados(response.data || []);
         } catch (err) {
+            console.error('Erro ao carregar:', err);
             setError('Falha ao carregar produtos.');
-            console.error(err);
+            setProdutos([]);
         } finally {
             setIsLoading(false);
         }
@@ -52,159 +46,320 @@ const PaginaProdutos = () => {
         carregarProdutos();
     }, []);
 
-    // Função para resetar o formulário
-    const resetForm = () => {
-        setFormData(initialFormData);
-        setEditingProduto(null);
-        setFormError(null);
+    // Filtro de busca
+    useEffect(() => {
+        const filtered = produtos.filter(produto =>
+            produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            produto.codigo_sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            produto.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setProdutosFiltrados(filtered);
+        setCurrentPage(1);
+    }, [searchTerm, produtos]);
+
+    // Paginação
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = produtosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(produtosFiltrados.length / itemsPerPage);
+
+    const handleNovo = () => {
+        setFormData({ nome: '', codigo_sku: '', tipo: 'PA', preco_custo: '', unidade_medida: '' });
+        setModalMode('create');
+        setProdutoSelecionado(null);
+        setShowModal(true);
     };
 
-    // Função combinada para Criar ou Atualizar
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        setFormError(null);
-
-        try {
-            if (editingProduto) {
-                // Modo EDIÇÃO
-                await produtosAPI.update(editingProduto.id, formData as any);
-            } else {
-                // Modo CRIAÇÃO
-                await produtosAPI.create(formData as any);
-            }
-
-            // Sucesso: reseta o formulário e recarrega a lista
-            resetForm();
-            carregarProdutos();
-
-        } catch (err: any) {
-            console.error(err);
-            if (err.response && err.response.data) {
-                const apiError = err.response.data;
-                const firstErrorKey = Object.keys(apiError)[0];
-                setFormError(`${firstErrorKey}: ${apiError[firstErrorKey]}`);
-            } else {
-                setFormError(`Falha ao ${editingProduto ? 'atualizar' : 'criar'} o produto. Tente novamente.`);
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // Função para carregar dados no formulário para edição
-    const handleEdit = (produto: Produto) => {
-        setEditingProduto(produto);
+    const handleEditar = (produto: Produto) => {
         setFormData({
             nome: produto.nome,
             codigo_sku: produto.codigo_sku,
             tipo: produto.tipo,
-            unidade_medida: produto.unidade_medida,
-            preco_custo: String(produto.preco_custo || '0.00') // Garante que seja string
+            preco_custo: produto.preco_custo,
+            unidade_medida: produto.unidade_medida
         });
-        window.scrollTo(0, 0); // Rola para o topo para mostrar o formulário
+        setModalMode('edit');
+        setProdutoSelecionado(produto);
+        setShowModal(true);
     };
 
-    // Função de deleção
     const handleDelete = async (id: number) => {
         if (window.confirm('Tem certeza que deseja deletar este produto?')) {
             try {
                 await produtosAPI.delete(id);
                 carregarProdutos();
             } catch (err) {
-                setError('Falha ao deletar produto. Verifique se ele não está em uso.');
-                console.error(err);
+                setError('Falha ao deletar produto.');
             }
         }
     };
 
-    // LÓGICA CORRIGIDA para garantir que a lista completa seja exibida se o campo de busca estiver vazio.
-    const produtosFiltrados = searchTerm.length === 0
-        ? produtos
-        : produtos.filter(produto =>
-            produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            produto.codigo_sku.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+    // No arquivo produtos.tsx
+    // ...
 
-    const getTipoLabel = (tipo: string) => {
-        const tipos: { [key: string]: string } = {
-            'MP': 'Matéria-Prima',
-            'PA': 'Produto Acabado',
-            'SV': 'Serviço',
-            'SB': 'Sub-produto'
-        };
-        return tipos[tipo] || tipo;
+    const handleSubmit = async () => {
+        try {
+            // 1. Clonar o formData e preparar para envio
+            // Usamos Partial<NovoProduto> para flexibilidade, mas Omit<Produto, 'id' | 'is_active'> é o ideal para o create.
+            // Para o update, data: Partial<NovoProduto> está correto na lib.
+            let dataToSend: any = { ...formData };
+
+            // 2. CORREÇÃO ESSENCIAL: Tratar o Preço de Custo
+            // Garante que o valor é enviado com ponto decimal, se existir.
+            if (dataToSend.preco_custo) {
+                // Converte para string (se já não for) e substitui todas as vírgulas por pontos.
+                let custoNormalizado = dataToSend.preco_custo.toString().replace(/,/g, '.');
+
+                // Converte para número (float) para garantir o formato correto.
+                // O DRF aceita floats, mas precisa do ponto.
+                dataToSend.preco_custo = parseFloat(custoNormalizado);
+
+                // Trata o caso de NaN (se o usuário digitou apenas lixo)
+                if (isNaN(dataToSend.preco_custo)) {
+                    // Você pode adicionar um tratamento visual de erro aqui se quiser
+                    setError("Por favor, insira um preço de custo válido (apenas números).");
+                    return; // Interrompe o envio
+                }
+            } else {
+                // Se o campo for obrigatório no Django, é melhor enviar '0' ou lançar um erro.
+                // Vou assumir que 0 é aceitável, ou que a validação de required já ocorreu na UI.
+                dataToSend.preco_custo = 0;
+            }
+
+            // 3. Chamada da API
+            if (modalMode === 'create') {
+                await produtosAPI.create(dataToSend);
+            } else if (produtoSelecionado) {
+                // No PUT (edição), a API precisa do ID e dos dados corrigidos
+                await produtosAPI.update(produtoSelecionado.id, dataToSend);
+            }
+
+            // 4. Sucesso
+            setShowModal(false);
+            carregarProdutos();
+        } catch (err: any) {
+            // Tratamento de Erro mais específico para o usuário
+            let errorMessage = 'Falha ao salvar produto. Verifique se todos os campos estão preenchidos corretamente.';
+
+            // Se o Axios retornou um erro 400 (Bad Request), o Django deve ter enviado detalhes
+            if (err.response && err.response.data) {
+                console.error("Erro detalhado do Django:", err.response.data);
+                errorMessage = "Erro de validação do servidor. Verifique o console para detalhes.";
+
+                // Exemplo: se houver um erro específico no campo 'codigo_sku'
+                if (err.response.data.codigo_sku) {
+                    errorMessage = `Erro no SKU: ${err.response.data.codigo_sku[0]}`;
+                }
+            }
+
+            setError(errorMessage);
+        }
     };
 
-    const getTipoBadge = (tipo: string) => {
-        const styles: { [key: string]: string } = {
-            'MP': 'bg-blue-100 text-blue-800',
-            'PA': 'bg-green-100 text-green-800',
-            'SV': 'bg-purple-100 text-purple-800',
-            'SB': 'bg-orange-100 text-orange-800'
-        };
-        return styles[tipo] || 'bg-gray-100 text-gray-800';
-    };
+
 
     return (
-        <DashboardLayout>
-            <div className="space-y-8">
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Produtos</h1>
-                    <p className="text-gray-500 mt-2">Cadastre e gerencie seus produtos, insumos e matérias-primas</p>
+        <DashboardLayoutModerno
+            title="Produtos e Insumos"
+            subtitle="Gerencie o cadastro de matérias-primas, embalagens e insumos"
+        >
+            {/* Barra de ações */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 flex gap-4 items-center flex-wrap">
+                {/* Busca */}
+                <div className="flex-1 min-w-[300px] relative">
+                    <Search
+                        size={18}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome, SKU ou tipo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
                 </div>
 
-                {/* Formulário de Cadastro / Edição */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-8 py-6 border-b border-blue-200">
-                        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                            <Plus className="text-blue-600" size={24} />
-                            {/* Título dinâmico */}
-                            {editingProduto ? `Editar Produto: ${editingProduto.nome}` : 'Cadastrar Novo Produto'}
-                        </h2>
-                    </div>
+                {/* Botão Novo */}
+                <button
+                    onClick={handleNovo}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                >
+                    <Plus size={18} />
+                    Novo Produto
+                </button>
+            </div>
 
-                    <div className="p-8">
-                        {formError && (
-                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                                <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
-                                <p className="text-sm text-red-700">{formError}</p>
+            {/* Tabela */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {isLoading ? (
+                    <div className="py-16 text-center">
+                        <div className="text-5xl mb-3">⏳</div>
+                        <p className="text-gray-500">Carregando produtos...</p>
+                    </div>
+                ) : error ? (
+                    <div className="py-10 px-6 text-center">
+                        <p className="text-red-600">⚠️ {error}</p>
+                    </div>
+                ) : produtosFiltrados.length === 0 ? (
+                    <div className="py-16 text-center">
+                        <Package size={48} className="text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-2">
+                            {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                            {searchTerm ? 'Tente buscar com outros termos' : 'Clique em "Novo Produto" para começar'}
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-200 bg-gray-50">
+                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        SKU
+                                    </th>
+                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Nome do Produto
+                                    </th>
+                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Tipo
+                                    </th>
+                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Custo Unitário
+                                    </th>
+                                    <th className="text-center py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[10px]">
+                                        Ações
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentItems.map((produto) => (
+                                    <tr
+                                        key={produto.id}
+                                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="py-0.5 px-3">
+                                            <code className="text-xs font-mono text-gray-700  px-2 py-1 rounded">
+                                                {produto.codigo_sku}
+                                            </code>
+                                        </td>
+                                        <td className="py-0.5 px-4 text-xs font-medium text-gray-900">
+                                            {produto.nome}
+                                        </td>
+                                        <td className="py-0.5 px-4">
+                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${produto.tipo === 'Matéria-Prima'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : produto.tipo === 'Embalagem'
+                                                    ? 'bg-purple-100 text-purple-700'
+                                                    : 'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                {produto.tipo}
+                                            </span>
+                                        </td>
+                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                            R$ {parseFloat(produto.preco_custo).toFixed(2)}
+                                        </td>
+                                        <td className="py-0.5 px-4">
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handleEditar(produto)}
+                                                    className="p-1.5 border border-gray-300 rounded-md hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 text-gray-600 transition-all"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(produto.id)}
+                                                    className="p-1.5 border border-gray-300 rounded-md hover:bg-red-50 hover:border-red-500 hover:text-red-600 text-gray-600 transition-all"
+                                                    title="Excluir"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {/* Paginação */}
+                        {totalPages > 1 && (
+                            <div className="px-5 py-4 border-t border-gray-200 flex justify-between items-center">
+                                <p className="text-sm text-gray-600">
+                                    Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, produtosFiltrados.length)} de {produtosFiltrados.length}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                    >
+                                        Anterior
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                    >
+                                        Próxima
+                                    </button>
+                                </div>
                             </div>
                         )}
+                    </>
+                )}
+            </div>
 
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid grid-cols-2 gap-6">
-                                {/* Nome do Item */}
+            {/* Modal de Formulário */}
+            {showModal && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                // onClick={() => setShowModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl"
+                    //onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="px-6 py-5 bg-slate-900 flex justify-start items-center rounded-t-2xl">
+                            <h2 className="text-xl font-bold text-white">
+                                {modalMode === 'create' ? 'Novo Produto' : 'Editar Produto'}
+                            </h2>
+
+                        </div>
+
+
+
+                        {/* Formulário */}
+                        <div className="px-6 py-6 bg-gray-100">
+                            <div className="space-y-5">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nome do Item *
+                                        Nome do Produto *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.nome}
                                         onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        placeholder="Ex: Farinha de Trigo"
-                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                        placeholder="Ex: Chapa de Aço Galvanizada"
                                     />
                                 </div>
 
-                                {/* Código (SKU) */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Código (SKU)
+                                        Código SKU *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.codigo_sku}
                                         onChange={(e) => setFormData({ ...formData, codigo_sku: e.target.value })}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        placeholder="Ex: FT-001"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                        placeholder="Ex: SKU001"
                                     />
                                 </div>
 
-                                {/* Tipo */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Tipo *
@@ -212,201 +367,61 @@ const PaginaProdutos = () => {
                                     <select
                                         value={formData.tipo}
                                         onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                     >
                                         <option value="MP">Matéria-Prima</option>
                                         <option value="PA">Produto Acabado</option>
-                                        <option value="SV">Serviço</option>
-                                        <option value="SB">Sub-produto</option>
+                                        <option value="">Outros</option>
                                     </select>
                                 </div>
 
-                                {/* Unidade de Medida */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Unidade (ex: kg, un, m) *
+                                        Preço de Custo (R$) *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.preco_custo}
+                                        onChange={(e) => setFormData({ ...formData, preco_custo: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                        placeholder="0,00"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Unidade de Medida *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.unidade_medida}
                                         onChange={(e) => setFormData({ ...formData, unidade_medida: e.target.value })}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        placeholder="Ex: kg"
-                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                        placeholder="Ex: un, kg, m"
                                     />
                                 </div>
-
-                                {/* Preço de Custo */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Preço de Custo (R$)
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.preco_custo}
-                                            onChange={(e) => setFormData({ ...formData, preco_custo: e.target.value })}
-                                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            placeholder="0,00"
-                                        />
-                                    </div>
-                                </div>
                             </div>
 
-                            <div className="flex justify-end pt-6 border-t border-gray-200 mt-6 gap-3">
-                                {editingProduto && (
-                                    <button
-                                        type="button"
-                                        onClick={resetForm}
-                                        className="px-8 py-3 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all shadow-sm"
-                                    >
-                                        Cancelar Edição
-                                    </button>
-                                )}
+                            {/* Botões */}
+                            <div className="mt-8 flex gap-3 justify-end">
                                 <button
-                                    type="submit" // Mudado para type="submit" para usar o onSubmit do form
-                                    disabled={isSubmitting}
-                                    className={`px-8 py-3 rounded-lg font-semibold text-white transition-all shadow-lg flex items-center gap-2 ${isSubmitting
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-600/30'
-                                        }`}
+                                    onClick={() => setShowModal(false)}
+                                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                                 >
-                                    <Plus size={20} />
-                                    {/* Texto dinâmico do botão */}
-                                    {isSubmitting ? 'Salvando...' : editingProduto ? 'Salvar Edição' : 'Salvar Produto'}
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSubmit}
+                                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                                >
+                                    {modalMode === 'create' ? 'Criar Produto' : 'Salvar Alterações'}
                                 </button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-
-                {/* Lista de Produtos (Tabela) */}
-
-                {/* Removido o bloco de debug que impedia a renderização da tabela */}
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900">Produtos Cadastrados</h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto' : 'produtos'}
-                            </p>
-                        </div>
-
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Buscar produtos..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-                            />
                         </div>
                     </div>
-
-                    <div className="overflow-x-auto">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="text-center">
-                                    <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-gray-500">Carregando produtos...</p>
-                                </div>
-                            </div>
-                        ) : error ? (
-                            <div className="p-8">
-                                <div className="flex items-center justify-center gap-3 text-red-600">
-                                    <AlertCircle size={24} />
-                                    <p>{error}</p>
-                                </div>
-                            </div>
-                        ) : produtosFiltrados.length === 0 ? (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="text-center">
-                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Package className="text-gray-400" size={32} />
-                                    </div>
-                                    <p className="text-gray-500 mb-2">
-                                        {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado ainda'}
-                                    </p>
-                                    <p className="text-sm text-gray-400">
-                                        {searchTerm ? 'Tente buscar por outro termo' : 'Comece cadastrando seu primeiro produto acima'}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            SKU
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Nome
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tipo
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Unidade
-                                        </th>
-                                        <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Custo (R$)
-                                        </th>
-                                        <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Ações
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {produtosFiltrados.map((produto) => (
-                                        <tr key={produto.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {produto.codigo_sku || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {produto.nome}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTipoBadge(produto.tipo)}`}>
-                                                    {getTipoLabel(produto.tipo)}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {produto.unidade_medida}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                                R$ {parseFloat(String(produto.preco_custo)).toFixed(2)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEdit(produto)} // Conectado à função de edição
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(produto.id)}
-                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Deletar"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
                 </div>
-            </div>
-        </DashboardLayout>
+            )}
+        </DashboardLayoutModerno>
     );
 };
 
