@@ -1,6 +1,7 @@
 // Em frontend/src/components/DashboardLayout.tsx
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 
 interface DashboardLayoutProps {
@@ -19,7 +20,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const router = useRouter();
 
     const handleLogout = () => {
-        // Limpa os tokens e o estado persistido do Zustand
         localStorage.removeItem('auth-storage');
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -30,20 +30,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <div className="flex h-screen bg-gray-100">
 
             {/* 1. MENU LATERAL (Sidebar) */}
+            <div className="p-4 flex items-center border-b border-gray-700"> 
+    {/* Usando o componente Image do Next.js */}
+    <Image 
+        src="/logo_valora.png" // Caminho relativo à pasta `public`
+        alt="Logo Valora MenteMestra"
+        width={120} // Largura desejada para o logo
+        height={30} // Altura desejada para o logo (ajuste conforme necessário)
+        className="h-auto" // Para manter a proporção da altura
+    />
+    {/* Se quiser um complemento de texto ao lado da imagem, pode adicionar aqui: */}
+    {/* <span className="text-xl font-extrabold text-gray-300 ml-2">M.M.</span> */}
+</div>
             <aside className="w-64 bg-gray-800 text-white flex-shrink-0 relative shadow-xl">
-                <div className="p-4 text-2xl font-extrabold text-blue-400 border-b border-gray-700">
-                    Precificação
-                </div>
+              
                 <nav className="p-4 space-y-2">
                     {navItems.map((item) => (
                         <Link key={item.name} href={item.href} legacyBehavior>
                             <a className={`
-                flex items-center p-3 rounded-lg transition duration-150
-                ${router.pathname === item.href
-                                    ? 'bg-blue-600 text-white font-semibold'
-                                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                flex items-center p-3 rounded-lg transition duration-150
+                                ${router.pathname === item.href
+                                    ? 'bg-blue-600 text-white font-semibold' // Cor de destaque para o item ativo
+                                    : 'text-gray-300 hover:bg-gray-700 hover:text-white' // Cores padrão e hover
                                 }
-              `}>
+                            `}>
                                 {item.name}
                             </a>
                         </Link>
@@ -51,7 +61,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </nav>
 
                 {/* Botão de Logout Fixo no Rodapé do Menu */}
-                <div className="absolute bottom-0 w-full p-4">
+                <div className="absolute bottom-0 w-full p-4 border-t border-gray-700"> {/* Adicionei borda superior */}
                     <button
                         onClick={handleLogout}
                         className="w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition duration-150"

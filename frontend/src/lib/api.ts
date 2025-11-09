@@ -32,32 +32,35 @@ api.interceptors.request.use((config) => {
 });
 
 // Interceptor para refresh token em caso de 401
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+// Interceptor para adicionar token em requisições
+api.interceptors.request.use(
+  (config) => {
+    // Verifica se estamos no browser
+    if (typeof window !== 'undefined') {
+      try {
+        const storedState = localStorage.getItem('auth-storage');
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+        if (storedState) {
+          const parsedState = JSON.parse(storedState);
+          const token = parsedState?.state?.accessToken;
 
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        try {
-          // Implementar refresh token aqui depois
-          // const { data } = await axios.post(`${API_URL}/auth/token/refresh/`, { refresh: refreshToken });
-          // localStorage.setItem('access_token', data.access);
-          // return api(originalRequest);
-        } catch (err) {
-          // ATENÇÃO: Se o refresh falhar, limpe TUDO para deslogar
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          // Opcional: Remover a chave principal do Zustand para logout completo
-          localStorage.removeItem('auth-storage');
-          window.location.href = '/login';
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('✅ Token adicionado ao axios');
+          } else {
+            console.warn('⚠️ Token não encontrado em auth-storage');
+          }
+        } else {
+          console.warn('⚠️ auth-storage não encontrado');
         }
+      } catch (error) {
+        console.error('❌ Erro ao processar token:', error);
       }
     }
 
+    return config;
+  },
+  (error) => {
     return Promise.reject(error);
   }
 );
