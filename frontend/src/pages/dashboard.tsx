@@ -60,7 +60,7 @@ export default function DashboardPage() {
                     </button>
 
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={() => router.push('/dashboard/produtos')}
                         className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition"
                     >
                         Página Inicial

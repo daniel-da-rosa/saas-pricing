@@ -36,7 +36,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (accessToken) {
       // Redireciona para a página principal ou dashboard após o login
-      router.push('/dashboard'); 
+      router.push('/dashboard');
     }
   }, [accessToken, router]);
 
@@ -50,25 +50,24 @@ export default function LoginPage() {
     <main className="flex items-center justify-center min-h-screen w-full bg-login-background bg-cover bg-center">
       <div className="max-w-md w-full p-6 rounded-lg shadow-xl bg-gray-900 bg-opacity-80 backdrop-blur-sm">
         <h1 className="text-2xl font-bold mb-6 text-center text-white">Login</h1>
-        
+
         {/* Formulário com a função handleSubmit */}
         <form onSubmit={handleSubmit}>
-          {/* ... Seus campos de Email e Senha (omiti para brevidade) ... */}
           <div className="mb-4">
-            <input 
-              type="email" 
-              placeholder="Email" 
-              value={email} 
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div className="mb-6">
-            <input 
-              type="password" 
-              placeholder="Senha" 
-              value={password} 
+            <input
+              type="password"
+              placeholder="Senha"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
@@ -96,8 +95,8 @@ export default function LoginPage() {
           onClick={handleGoogleLogin}
           disabled={isLoading}
           className="w-full py-2 px-4 bg-gray-700 rounded text-white cursor-pointer hover:bg-gray-600 transition duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-          <img src="google-icon.svg" alt="Google" className="w-5 h-5 mr-2" /> 
+        >
+          <img src="google-icon.svg" alt="Google" className="w-5 h-5 mr-2" />
           Entrar com Google
         </button>
       </div>
