@@ -4,6 +4,20 @@ import { produtosAPI, Produto } from '../../lib/api';
 import DashboardLayoutModerno from '../../components/DashboardLayoutModerno';
 import { Search, Plus, Edit2, Trash2, X, Package } from 'lucide-react';
 
+//importação do dialog 
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog"
+
+
 const PaginaProdutos = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>([]);
@@ -84,14 +98,14 @@ const PaginaProdutos = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm('Tem certeza que deseja deletar este produto?')) {
-            try {
-                await produtosAPI.delete(id);
-                carregarProdutos();
-            } catch (err) {
-                setError('Falha ao deletar produto.');
-            }
+
+        try {
+            await produtosAPI.delete(id);
+            carregarProdutos();
+        } catch (err) {
+            setError('Falha ao deletar produto.');
         }
+
     };
 
     // No arquivo produtos.tsx
@@ -250,7 +264,7 @@ const PaginaProdutos = () => {
                                         <td className="py-0.5 px-4">
                                             <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${produto.tipo === 'Matéria-Prima'
                                                 ? 'bg-blue-100 text-blue-700'
-                                                : produto.tipo === 'Embalagem'
+                                                : produto.tipo === 'MP'
                                                     ? 'bg-purple-100 text-purple-700'
                                                     : 'bg-amber-100 text-amber-700'
                                                 }`}>
@@ -269,15 +283,69 @@ const PaginaProdutos = () => {
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDelete(produto.id)}
-                                                    className="p-1.5 border border-gray-300 rounded-md hover:bg-red-50 hover:border-red-500 hover:text-red-600 text-gray-600 transition-all"
-                                                    title="Excluir"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+
+                                                {/* ALERT DIALOG DE EXCLUSÃO */}
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <button
+                                                            className="p-1.5 border border-gray-300 rounded-md hover:bg-red-50 hover:border-red-500 hover:text-red-600 text-gray-600 transition-all"
+                                                            title="Excluir"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <div>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Tem certeza que deseja excluir?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Essa ação não pode ser desfeita. O produto será removido permanentemente do sistema.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+
+                                                            <div style={{
+                                                                padding: '12px',
+                                                                background: 'rgba(239, 68, 68, 0.15)',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                                                marginTop: '16px'
+                                                            }}>
+                                                                <p style={{
+                                                                    color: '#ef4444',
+                                                                    fontWeight: '600',
+                                                                    marginBottom: '8px',
+                                                                    fontSize: '14px'
+                                                                }}>
+                                                                    Produto a ser excluído:
+                                                                </p>
+                                                                <p style={{
+                                                                    color: '#d1d5db',
+                                                                    margin: '4px 0',
+                                                                    fontSize: '14px'
+                                                                }}>
+                                                                    <strong style={{ color: '#9ca3af' }}>SKU:</strong> {produto.codigo_sku}
+                                                                </p>
+                                                                <p style={{
+                                                                    color: '#d1d5db',
+                                                                    margin: '4px 0',
+                                                                    fontSize: '14px'
+                                                                }}>
+                                                                    <strong style={{ color: '#9ca3af' }}>Nome:</strong> {produto.nome}
+                                                                </p>
+                                                            </div>
+
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(produto.id)}>
+                                                                    Excluir
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </div>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </div>
                                         </td>
+
                                     </tr>
                                 ))}
                             </tbody>

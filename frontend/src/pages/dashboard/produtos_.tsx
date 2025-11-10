@@ -1,26 +1,33 @@
 // Em frontend/src/pages/dashboard/produtos.tsx
 "use client";
 import React, { useState, useEffect } from 'react';
-import { produtosAPI, Produto } from '../../lib/api'; // Importa nossa API e tipo
-import ProdutoForm from '../../components/ProductForm'; // Importa nosso formulário
+import { produtosAPI, Produto } from '../../lib/api';
+import ProdutoForm from '../../components/ProductForm';
 import DashboardLayout from '../../components/DashboardLayoutModerno';
-
-// (Opcional: Importe seu componente de Layout do Dashboard)
-// import DashboardLayout from '../../components/DashboardLayout';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 const PaginaProdutos = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // --- Função para carregar os produtos da API ---
     const carregarProdutos = async () => {
         setIsLoading(true);
         setError(null);
         try {
             const response = await produtosAPI.list();
-            setProdutos(response.data); // <-- A correção é pegar .data
-
+            setProdutos(response.data);
         } catch (err) {
             setError('Falha ao carregar produtos.');
             console.error(err);
@@ -29,29 +36,22 @@ const PaginaProdutos = () => {
         }
     };
 
-    // --- Carrega os dados quando a página é montada ---
     useEffect(() => {
         carregarProdutos();
-    }, []); // O array vazio [] faz isso rodar só uma vez
+    }, []);
 
-    // --- Função chamada pelo Form quando um produto é salvo ---
     const handleSuccess = () => {
-        // Simplesmente recarrega a lista para mostrar o novo item
         console.log('Produto salvo com sucesso, recarregando lista...');
         carregarProdutos();
     };
 
-    // --- Função para deletar um produto ---
     const handleDelete = async (id: number) => {
-        if (window.confirm('Tem certeza que deseja deletar este produto?')) {
-            try {
-                await produtosAPI.delete(id);
-                // Recarrega a lista após deletar
-                carregarProdutos();
-            } catch (err) {
-                setError('Falha ao deletar produto. Verifique se ele não está em uso em uma composição.');
-                console.error(err);
-            }
+        try {
+            await produtosAPI.delete(id);
+            carregarProdutos();
+        } catch (err) {
+            setError('Falha ao deletar produto. Verifique se ele não está em uso em uma composição.');
+            console.error(err);
         }
     };
 
@@ -62,14 +62,12 @@ const PaginaProdutos = () => {
 
                 <hr />
 
-                {/* Coluna 1: Formulário de Cadastro */}
                 <div style={{ marginBottom: '20px' }}>
                     <ProdutoForm onSuccess={handleSuccess} />
                 </div>
 
                 <hr />
 
-                {/* Coluna 2: Lista/Tabela de Produtos */}
                 <div>
                     <h2>Produtos Cadastrados</h2>
 
@@ -102,10 +100,50 @@ const PaginaProdutos = () => {
                                             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{produto.tipo}</td>
                                             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{parseFloat(produto.preco_custo).toFixed(2)}</td>
                                             <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                                                {/* TODO: Botão Editar */}
-                                                <button onClick={() => handleDelete(produto.id)}>
-                                                    Deletar
-                                                </button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <button
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                color: '#dc2626',
+                                                                padding: '4px 8px'
+                                                            }}
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <div>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Tem certeza que deseja excluir?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Essa ação não pode ser desfeita. O produto será removido permanentemente do sistema.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+
+                                                            <div style={{
+                                                                padding: '12px',
+                                                                background: 'red',
+                                                                borderRadius: '8px',
+                                                                marginTop: '16px',
+                                                                color: 'white'
+                                                            }}>
+                                                                <p>TESTE VISIVEL</p>
+                                                                <p>SKU: {produto.codigo_sku}</p>
+                                                                <p>Nome: {produto.nome}</p>
+                                                            </div>
+
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(produto.id)}>
+                                                                    Excluir
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </div>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </td>
                                         </tr>
                                     ))
