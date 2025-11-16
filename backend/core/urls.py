@@ -8,7 +8,7 @@ from subscriptions.views import PlanViewSet, SubscriptionViewSet
 from payments.views import PaymentViewSet
 from users.views import SocialLoginRedirectView 
 #from quotes.views import OrcamentoViewSet
-from pricing.views import ProdutoViewSet, ComposicaoViewSet
+from pricing.views import ProdutoViewSet, ComposicaoViewSet, TipoProdutoViewSet,UnidadeMedidaViewSet
 
 # Router para ViewSets
 router = DefaultRouter()
@@ -17,6 +17,8 @@ router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 router.register(r'payments', PaymentViewSet, basename='payment')
 router.register(r'produtos', ProdutoViewSet, basename='produto')
 router.register(r'composicoes', ComposicaoViewSet, basename='composicao')
+router.register(r'tipos-produto', TipoProdutoViewSet, basename='tipoproduto')
+router.register(r'unidades-medida', UnidadeMedidaViewSet, basename='unidademedida')
 
 urlpatterns = [
     path('', lambda r: redirect('api/', permanent=False)),

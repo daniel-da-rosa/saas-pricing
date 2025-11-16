@@ -123,7 +123,7 @@ export interface Produto {
   id: number;
   nome: string;
   codigo_sku: string;
-  tipo: 'MP' | 'PA' | 'SV' | 'SB';
+  tipo: string
   unidade_medida: string;
   preco_custo: string;
   is_active: boolean;
@@ -166,6 +166,18 @@ export interface Composicao {
   descricao: string;
   custo_adicional_fixo: string;
   itens: ItemComposicao[];
+}
+
+export interface TipoProdutoAPI {
+  id: number;
+  nome: string;
+  tipo: string; // A sigla "MP", "PA", etc.
+}
+
+export interface UnidadeMedidaAPI {
+  id: number;
+  nome: string;
+  sigla: string;
 }
 
 export type NovaComposicao = Omit<Composicao, 'id'>;

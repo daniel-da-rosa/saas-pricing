@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { produtosAPI, Produto } from '../../lib/api';
+import api, { produtosAPI, Produto } from '../../lib/api';
 import DashboardLayoutModerno from '../../components/DashboardLayoutModerno';
 import { Search, Plus, Edit2, Trash2, X, Package } from 'lucide-react';
 
@@ -28,7 +28,10 @@ const PaginaProdutos = () => {
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [tiposProduto, setTiposProduto]= useState([])
+    const [unidadesMedida, setUnidadesMedida]= useState([])
     const itemsPerPage = 10;
+    
 
     // Form state
     const [formData, setFormData] = useState({
@@ -56,6 +59,26 @@ const PaginaProdutos = () => {
         }
     };
 
+const fetchOpcoes = async () => {
+        try {
+            // (Se você usa Axios, ajuste aqui)
+            const [tiposRes, unidadesRes] = await Promise.all([
+                api.get('/tipos-produto/'), // O endpoint criado no urls
+                api.get('/unidades-medida/') // O O endpoint criado no urls
+            ]);
+            
+            setTiposProduto(tiposRes.data);
+            setUnidadesMedida(unidadesRes.data);
+
+        } catch (error) {
+            console.error("Erro ao buscar opções de formulário:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchOpcoes();
+    }, []);
+
     useEffect(() => {
         carregarProdutos();
     }, []);
@@ -65,7 +88,7 @@ const PaginaProdutos = () => {
         const filtered = produtos.filter(produto =>
             produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
             produto.codigo_sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            produto.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+            produto.tipo_nome.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setProdutosFiltrados(filtered);
         setCurrentPage(1);
@@ -240,7 +263,10 @@ const PaginaProdutos = () => {
                                         Tipo
                                     </th>
                                     <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Custo Unitário
+                                        Unitário
+                                    </th>
+                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Unidade
                                     </th>
                                     <th className="text-center py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[10px]">
                                         Ações
@@ -268,11 +294,14 @@ const PaginaProdutos = () => {
                                                     ? 'bg-purple-100 text-purple-700'
                                                     : 'bg-amber-100 text-amber-700'
                                                 }`}>
-                                                {produto.tipo}
+                                                {produto.tipo_nome}
                                             </span>
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
                                             R$ {parseFloat(produto.preco_custo).toFixed(2)}
+                                        </td>
+                                                                                <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                             {produto.unidade_medida_nome}
                                         </td>
                                         <td className="py-0.5 px-4">
                                             <div className="flex gap-2 justify-center">
@@ -402,30 +431,33 @@ const PaginaProdutos = () => {
                         {/* Formulário */}
                         <div className="px-6 py-6 bg-gray-100">
                             <div className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nome do Produto *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.nome}
-                                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                                        placeholder="Ex: Chapa de Aço Galvanizada"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Código SKU *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.codigo_sku}
-                                        onChange={(e) => setFormData({ ...formData, codigo_sku: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                                        placeholder="Ex: SKU001"
-                                    />
+                                <div className="grid grid-cols-5 gap-6">
+                                     <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Código SKU *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.codigo_sku}
+                                            onChange={(e) => setFormData({ ...formData, codigo_sku: e.target.value })}
+                                            disabled={true}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="Gerado Automático"
+                                        />
+                                    </div>
+                                    <div className='col-span-4'>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Nome do Produtos *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.nome}
+                                            onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="Ex: Chapa de Aço Galvanizada"
+                                        />
+                                    </div>
+                                   
                                 </div>
 
                                 <div>
@@ -433,40 +465,55 @@ const PaginaProdutos = () => {
                                         Tipo *
                                     </label>
                                     <select
-                                        value={formData.tipo}
+                                        value={formData.tipo} // O 'value' agora é o ID (ex: 1)
                                         onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                     >
-                                        <option value="MP">Matéria-Prima</option>
-                                        <option value="PA">Produto Acabado</option>
-                                        <option value="">Outros</option>
+                                        <option value="">Selecione um tipo...</option>
+                                        
+                                        {/* MUDANÇA AQUI: Mapeia os dados do estado */}
+                                        {tiposProduto.map((tipo) => (
+                                            <option key={tipo.id} value={tipo.id}> {/* O 'value' é o ID! */}
+                                                {tipo.nome} ({tipo.tipo})
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Preço de Custo (R$) *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.preco_custo}
-                                        onChange={(e) => setFormData({ ...formData, preco_custo: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                                        placeholder="0,00"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Unidade de Medida *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.unidade_medida}
-                                        onChange={(e) => setFormData({ ...formData, unidade_medida: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                                        placeholder="Ex: un, kg, m"
-                                    />
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Preço de Custo (R$) *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.preco_custo}
+                                            onChange={(e) => setFormData({ ...formData, preco_custo: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="0,00"
+                                        />
+                                    </div>
+                                    {/* MUDANÇA AQUI: 'input' virou 'select' */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Unidade de Medida *
+                                        </label>
+                                        <select
+                                            value={formData.unidade_medida} // O 'value' agora é o ID (ex: 3)
+                                            onChange={(e) => setFormData({ ...formData, unidade_medida: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                                        >
+                                            <option value="">Selecione uma unidade...</option>
+                                            
+                                            {/* MUDANÇA AQUI: Mapeia os dados do estado */}
+                                            {unidadesMedida.map((unidade) => (
+                                                <option key={unidade.id} value={unidade.id}> {/* O 'value' é o ID! */}
+                                                    {unidade.nome} ({unidade.sigla})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 

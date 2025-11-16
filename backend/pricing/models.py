@@ -7,13 +7,6 @@ class Produto(models.Model):
     Produtos, Matérias-Primas e Serviços da Empresa-Cliente.
     Este é o cadastro central de 'itens'.
     """
-    TIPO_CHOICES = [
-        ('MP', 'Matéria-Prima'),
-        ('PA', 'Produto Acabado'),
-        ('SV', 'Serviço'),
-        ('SB', 'Sub-produto/Intermediário'), # Item que é produzido E usado em outra composição
-    ]
-
     # Chave estrangeira ligando este produto à empresa dona dele
     empresa = models.ForeignKey(
         Empresa, 
@@ -24,8 +17,23 @@ class Produto(models.Model):
 
     nome = models.CharField(max_length=255, verbose_name="Nome do Item")
     codigo_sku = models.CharField(max_length=100, blank=True, verbose_name="Código (SKU)")
-    tipo = models.CharField(max_length=2, choices=TIPO_CHOICES, verbose_name="Tipo de Item")
-    unidade_medida = models.CharField(max_length=20, verbose_name="Unidade de Medida") # ex: 'kg', 'm', 'un', 'h' (hora)
+
+    tipo = models.ForeignKey(
+        "TipoProduto",
+        on_delete=models.PROTECT,
+        related_name= 'tipoProduto',
+        verbose_name='Tipo de Item',
+        null=True
+
+    )
+    
+    unidade_medida = models.ForeignKey(
+        "UnidadeMedida",
+        on_delete=models.PROTECT,
+        related_name='unidadeMedida',
+        verbose_name= 'Unidade de Medida',
+        null=True  
+            )
 
     # Preço de Custo (usado para Matérias-Primas e Serviços)
     preco_custo = models.DecimalField(
@@ -49,6 +57,48 @@ class Produto(models.Model):
     def __str__(self):
         return f"{self.nome} ({self.unidade_medida})" # Corrigido de get_unidade_medida_display
 
+class UnidadeMedida(models.Model):
+    #fk com tabela empresa
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name= 'unidade_medida',
+        verbose_name='Empresa'
+    )
+
+    nome = models.CharField(max_length=50)
+    sigla = models.CharField(max_length=10 )
+
+    class Meta:
+        verbose_name = "Unidade de Medida",
+        verbose_name_plural = 'Unidades de Medida'
+        unique_together = [('empresa','nome'),
+                           ('empresa','sigla')
+                           ]
+
+    def __str__(self):
+        return self.sigla
+
+class TipoProduto(models.Model):
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name='tipos_produto',
+        verbose_name='Empresa'
+    )
+    nome = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=2)
+
+    class Meta:
+        verbose_name = "Tipo de Produto"
+        verbose_name_plural = "Tipos de Produtos"
+        #garante unique key
+        unique_together = [('empresa', 'tipo'),
+                           ('empresa', 'nome')
+                           ]
+
+    def __str__(self):
+        return self.nome
 
 class Composicao(models.Model):
     """
@@ -68,7 +118,7 @@ class Composicao(models.Model):
         related_name='composicao', 
         verbose_name="Produto Acabado",
         # Limita a escolha para itens que NÃO são Matéria-Prima Pura
-        limit_choices_to=~models.Q(tipo='MP') 
+        limit_choices_to=~models.Q(tipo__tipo='MP') 
     )
 
     descricao = models.CharField(max_length=255, blank=True, verbose_name="Descrição")
@@ -129,3 +179,4 @@ class ItemComposicao(models.Model):
 
     def __str__(self):
         return f"{self.quantidade} x {self.componente.nome}"
+    

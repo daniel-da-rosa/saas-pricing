@@ -47,7 +47,7 @@ export default function DashboardPage() {
                     👋 Bem-vindo{user?.email ? `, ${user.email}` : ''}!
                 </h1>
                 <p className="text-gray-300 mb-6">
-                    Você fez login com sucesso (de verdade agora!).
+                    Login efetuado com sucesso!!
                 </p>
 
                 <div className="flex gap-4 justify-center">
