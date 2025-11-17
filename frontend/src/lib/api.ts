@@ -127,6 +127,10 @@ export interface Produto {
   unidade_medida: string;
   preco_custo: string;
   is_active: boolean;
+  peso_liquido?: number;
+  peso_bruto?:number;
+  referencia?:string;
+  marca?:string;
 }
 
 export type NovoProduto = Omit<Produto, 'id' | 'is_active'>;

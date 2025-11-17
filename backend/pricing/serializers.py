@@ -16,7 +16,7 @@ class ProdutoSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'empresa', 'nome', 'codigo_sku', 'tipo', 
             'unidade_medida', 'preco_custo', 'is_active',
-            'tipo_nome', 'unidade_medida_nome'  # Campos extras
+            'tipo_nome', 'unidade_medida_nome','marca','peso_bruto','peso_liquido','referencia'  # Campos extras
         ]
         read_only_fields = ['empresa', 'tipo_nome', 'unidade_medida_nome']
     

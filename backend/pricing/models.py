@@ -17,6 +17,8 @@ class Produto(models.Model):
 
     nome = models.CharField(max_length=255, verbose_name="Nome do Item")
     codigo_sku = models.CharField(max_length=100, blank=True, verbose_name="Código (SKU)")
+    marca = models.CharField(max_length=100, blank=True, verbose_name="Marca")
+    referencia = models.CharField(max_length=100, blank=True, verbose_name="Referencia")
 
     tipo = models.ForeignKey(
         "TipoProduto",
@@ -42,6 +44,23 @@ class Produto(models.Model):
         default=0.0,
         verbose_name="Preço de Custo"
     )
+
+    # Peso Liquido
+    peso_liquido = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        default=0.0,
+        verbose_name="Peso Liquido"
+    )
+
+    #peso_bruto
+    peso_bruto= models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        default=0.0,
+        verbose_name='Peso Bruto'
+    )
+  
 
     is_active = models.BooleanField(default=True, verbose_name="Está Ativo?")
     created_at = models.DateTimeField(auto_now_add=True)

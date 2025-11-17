@@ -37,9 +37,13 @@ const PaginaProdutos = () => {
     const [formData, setFormData] = useState({
         nome: '',
         codigo_sku: '',
-        tipo: 'PA',
+        tipo: '',
         preco_custo: '',
         unidade_medida: '',
+        peso_liquido:'',
+        peso_bruto:'',
+        marca:''
+
     });
 
     const carregarProdutos = async () => {
@@ -88,7 +92,8 @@ const fetchOpcoes = async () => {
         const filtered = produtos.filter(produto =>
             produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
             produto.codigo_sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            produto.tipo_nome.toLowerCase().includes(searchTerm.toLowerCase())
+            produto.tipo_nome.toLowerCase().includes(searchTerm.toLowerCase())||
+            produto.marca.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setProdutosFiltrados(filtered);
         setCurrentPage(1);
@@ -101,7 +106,7 @@ const fetchOpcoes = async () => {
     const totalPages = Math.ceil(produtosFiltrados.length / itemsPerPage);
 
     const handleNovo = () => {
-        setFormData({ nome: '', codigo_sku: '', tipo: 'PA', preco_custo: '', unidade_medida: '' });
+        setFormData({ nome: '', codigo_sku: '', tipo: 'PA', preco_custo: '', unidade_medida: '',peso_bruto:'', peso_liquido:'', marca:''});
         setModalMode('create');
         setProdutoSelecionado(null);
         setShowModal(true);
@@ -113,7 +118,10 @@ const fetchOpcoes = async () => {
             codigo_sku: produto.codigo_sku,
             tipo: produto.tipo,
             preco_custo: produto.preco_custo,
-            unidade_medida: produto.unidade_medida
+            unidade_medida: produto.unidade_medida,
+            peso_bruto : produto.peso_bruto || '',
+            peso_liquido : produto.peso_liquido||'',
+            marca : produto.marca || ''
         });
         setModalMode('edit');
         setProdutoSelecionado(produto);
@@ -263,10 +271,16 @@ const fetchOpcoes = async () => {
                                         Tipo
                                     </th>
                                     <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Unitário
+                                        Unidade
                                     </th>
                                     <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Unidade
+                                        Peso
+                                    </th>
+                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Marca
+                                    </th>
+                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                        Unitário
                                     </th>
                                     <th className="text-center py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[10px]">
                                         Ações
@@ -298,10 +312,16 @@ const fetchOpcoes = async () => {
                                             </span>
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                            R$ {parseFloat(produto.preco_custo).toFixed(2)}
-                                        </td>
-                                                                                <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
                                              {produto.unidade_medida_nome}
+                                        </td>
+                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                             {produto.peso_liquido}
+                                        </td>
+                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                             {produto.marca}
+                                        </td>
+                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                            R$ {parseFloat(produto.preco_custo).toFixed(2)}
                                         </td>
                                         <td className="py-0.5 px-4">
                                             <div className="flex gap-2 justify-center">
@@ -431,6 +451,43 @@ const fetchOpcoes = async () => {
                         {/* Formulário */}
                         <div className="px-6 py-6 bg-gray-100">
                             <div className="space-y-5">
+                                
+                                 <div className='grid grid-cols-4 gap-6'>
+
+                                    <div className='col-span-3'>  
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Tipo *
+                                        </label>
+                                        <select
+                                            value={formData.tipo} // O 'value' agora é o ID (ex: 1)
+                                            onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                                        >
+                                            <option value="">Selecione um tipo...</option>
+                                            
+                                            {/* MUDANÇA AQUI: Mapeia os dados do estado */}
+                                            {tiposProduto.map((tipo) => (
+                                                <option key={tipo.id} value={tipo.id}> {/* O 'value' é o ID! */}
+                                                    {tipo.nome} ({tipo.tipo})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Marca *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.marca}
+                                                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                                                disabled={false}
+                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                                placeholder="Marca"
+                                            />
+                                    </div>    
+                                </div>
+
                                 <div className="grid grid-cols-5 gap-6">
                                      <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -459,28 +516,10 @@ const fetchOpcoes = async () => {
                                     </div>
                                    
                                 </div>
+                               
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Tipo *
-                                    </label>
-                                    <select
-                                        value={formData.tipo} // O 'value' agora é o ID (ex: 1)
-                                        onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
-                                    >
-                                        <option value="">Selecione um tipo...</option>
-                                        
-                                        {/* MUDANÇA AQUI: Mapeia os dados do estado */}
-                                        {tiposProduto.map((tipo) => (
-                                            <option key={tipo.id} value={tipo.id}> {/* O 'value' é o ID! */}
-                                                {tipo.nome} ({tipo.tipo})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-4 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Preço de Custo (R$) *
@@ -490,6 +529,31 @@ const fetchOpcoes = async () => {
                                             step="0.01"
                                             value={formData.preco_custo}
                                             onChange={(e) => setFormData({ ...formData, preco_custo: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="0,00"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Peso Líquido (KG) *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.peso_liquido}
+                                            onChange={(e) => setFormData({ ...formData, peso_liquido: e.target.value })}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="0,00"
+                                        />
+                                    </div><div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Peso Bruto (KG) *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.peso_bruto}
+                                            onChange={(e) => setFormData({ ...formData, peso_bruto: e.target.value })}
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                             placeholder="0,00"
                                         />
