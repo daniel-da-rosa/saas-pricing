@@ -1,14 +1,20 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import Empresa
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    has_company = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = ['id', 'email', 'username', 'first_name', 'last_name', 
-                  'company_name', 'phone', 'created_at']
-        read_only_fields = ['id', 'created_at']
+                  'company_name', 'phone', 'created_at', 'has_company']
+        read_only_fields = ['id', 'created_at', 'has_company']
+    
+    def get_has_company(self, obj):
+        return Empresa.objects.filter(owner=obj).exists()
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -29,3 +35,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class EmpresaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empresa
+        fields = ['id', 'nome_fantasia', 'razao_social', 'cnpj', 'telefone', 
+                  'endereco', 'email', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        # Automatically set owner to current user
+        validated_data['owner'] = self.context['request'].user
+        return super().create(validated_data)

@@ -28,10 +28,9 @@ const PaginaProdutos = () => {
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [tiposProduto, setTiposProduto]= useState([])
-    const [unidadesMedida, setUnidadesMedida]= useState([])
+    const [tiposProduto, setTiposProduto] = useState<any[]>([]);
+    const [unidadesMedida, setUnidadesMedida] = useState<any[]>([]);
     const itemsPerPage = 10;
-    
 
     // Form state
     const [formData, setFormData] = useState({
@@ -40,10 +39,9 @@ const PaginaProdutos = () => {
         tipo: '',
         preco_custo: '',
         unidade_medida: '',
-        peso_liquido:'',
-        peso_bruto:'',
-        marca:''
-
+        peso_liquido: '',
+        peso_bruto: '',
+        marca: ''
     });
 
     const carregarProdutos = async () => {
@@ -63,14 +61,13 @@ const PaginaProdutos = () => {
         }
     };
 
-const fetchOpcoes = async () => {
+    const fetchOpcoes = async () => {
         try {
-            // (Se você usa Axios, ajuste aqui)
             const [tiposRes, unidadesRes] = await Promise.all([
-                api.get('/tipos-produto/'), // O endpoint criado no urls
-                api.get('/unidades-medida/') // O O endpoint criado no urls
+                api.get('/tipos-produto/'),
+                api.get('/unidades-medida/')
             ]);
-            
+
             setTiposProduto(tiposRes.data);
             setUnidadesMedida(unidadesRes.data);
 
@@ -81,9 +78,6 @@ const fetchOpcoes = async () => {
 
     useEffect(() => {
         fetchOpcoes();
-    }, []);
-
-    useEffect(() => {
         carregarProdutos();
     }, []);
 
@@ -92,8 +86,8 @@ const fetchOpcoes = async () => {
         const filtered = produtos.filter(produto =>
             produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
             produto.codigo_sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            produto.tipo_nome.toLowerCase().includes(searchTerm.toLowerCase())||
-            produto.marca.toLowerCase().includes(searchTerm.toLowerCase())
+            (produto.tipo_nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (produto.marca || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
         setProdutosFiltrados(filtered);
         setCurrentPage(1);
@@ -106,7 +100,7 @@ const fetchOpcoes = async () => {
     const totalPages = Math.ceil(produtosFiltrados.length / itemsPerPage);
 
     const handleNovo = () => {
-        setFormData({ nome: '', codigo_sku: '', tipo: 'PA', preco_custo: '', unidade_medida: '',peso_bruto:'', peso_liquido:'', marca:''});
+        setFormData({ nome: '', codigo_sku: '', tipo: 'PA', preco_custo: '', unidade_medida: '', peso_bruto: '', peso_liquido: '', marca: '' });
         setModalMode('create');
         setProdutoSelecionado(null);
         setShowModal(true);
@@ -119,9 +113,9 @@ const fetchOpcoes = async () => {
             tipo: produto.tipo,
             preco_custo: produto.preco_custo,
             unidade_medida: produto.unidade_medida,
-            peso_bruto : produto.peso_bruto || '',
-            peso_liquido : produto.peso_liquido||'',
-            marca : produto.marca || ''
+            peso_bruto: produto.peso_bruto?.toString() || '',
+            peso_liquido: produto.peso_liquido?.toString() || '',
+            marca: produto.marca || ''
         });
         setModalMode('edit');
         setProdutoSelecionado(produto);
@@ -129,69 +123,45 @@ const fetchOpcoes = async () => {
     };
 
     const handleDelete = async (id: number) => {
-
         try {
             await produtosAPI.delete(id);
             carregarProdutos();
         } catch (err) {
             setError('Falha ao deletar produto.');
         }
-
     };
-
-    // No arquivo produtos.tsx
-    // ...
 
     const handleSubmit = async () => {
         try {
-            // 1. Clonar o formData e preparar para envio
-            // Usamos Partial<NovoProduto> para flexibilidade, mas Omit<Produto, 'id' | 'is_active'> é o ideal para o create.
-            // Para o update, data: Partial<NovoProduto> está correto na lib.
             let dataToSend: any = { ...formData };
 
-            // 2. CORREÇÃO ESSENCIAL: Tratar o Preço de Custo
-            // Garante que o valor é enviado com ponto decimal, se existir.
             if (dataToSend.preco_custo) {
-                // Converte para string (se já não for) e substitui todas as vírgulas por pontos.
                 let custoNormalizado = dataToSend.preco_custo.toString().replace(/,/g, '.');
-
-                // Converte para número (float) para garantir o formato correto.
-                // O DRF aceita floats, mas precisa do ponto.
                 dataToSend.preco_custo = parseFloat(custoNormalizado);
 
-                // Trata o caso de NaN (se o usuário digitou apenas lixo)
                 if (isNaN(dataToSend.preco_custo)) {
-                    // Você pode adicionar um tratamento visual de erro aqui se quiser
                     setError("Por favor, insira um preço de custo válido (apenas números).");
-                    return; // Interrompe o envio
+                    return;
                 }
             } else {
-                // Se o campo for obrigatório no Django, é melhor enviar '0' ou lançar um erro.
-                // Vou assumir que 0 é aceitável, ou que a validação de required já ocorreu na UI.
                 dataToSend.preco_custo = 0;
             }
 
-            // 3. Chamada da API
             if (modalMode === 'create') {
                 await produtosAPI.create(dataToSend);
             } else if (produtoSelecionado) {
-                // No PUT (edição), a API precisa do ID e dos dados corrigidos
                 await produtosAPI.update(produtoSelecionado.id, dataToSend);
             }
 
-            // 4. Sucesso
             setShowModal(false);
             carregarProdutos();
         } catch (err: any) {
-            // Tratamento de Erro mais específico para o usuário
             let errorMessage = 'Falha ao salvar produto. Verifique se todos os campos estão preenchidos corretamente.';
 
-            // Se o Axios retornou um erro 400 (Bad Request), o Django deve ter enviado detalhes
             if (err.response && err.response.data) {
                 console.error("Erro detalhado do Django:", err.response.data);
                 errorMessage = "Erro de validação do servidor. Verifique o console para detalhes.";
 
-                // Exemplo: se houver um erro específico no campo 'codigo_sku'
                 if (err.response.data.codigo_sku) {
                     errorMessage = `Erro no SKU: ${err.response.data.codigo_sku[0]}`;
                 }
@@ -200,8 +170,6 @@ const fetchOpcoes = async () => {
             setError(errorMessage);
         }
     };
-
-
 
     return (
         <DashboardLayoutModerno
@@ -312,13 +280,13 @@ const fetchOpcoes = async () => {
                                             </span>
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                             {produto.unidade_medida_nome}
+                                            {produto.unidade_medida_nome}
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                             {produto.peso_liquido}
+                                            {produto.peso_liquido}
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                             {produto.marca}
+                                            {produto.marca}
                                         </td>
                                         <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
                                             R$ {parseFloat(produto.preco_custo).toFixed(2)}
@@ -451,10 +419,10 @@ const fetchOpcoes = async () => {
                         {/* Formulário */}
                         <div className="px-6 py-6 bg-gray-100">
                             <div className="space-y-5">
-                                
-                                 <div className='grid grid-cols-4 gap-6'>
 
-                                    <div className='col-span-3'>  
+                                <div className='grid grid-cols-4 gap-6'>
+
+                                    <div className='col-span-3'>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Tipo *
                                         </label>
@@ -464,7 +432,7 @@ const fetchOpcoes = async () => {
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                         >
                                             <option value="">Selecione um tipo...</option>
-                                            
+
                                             {/* MUDANÇA AQUI: Mapeia os dados do estado */}
                                             {tiposProduto.map((tipo) => (
                                                 <option key={tipo.id} value={tipo.id}> {/* O 'value' é o ID! */}
@@ -475,21 +443,21 @@ const fetchOpcoes = async () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Marca *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.marca}
-                                                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                                                disabled={false}
-                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                                                placeholder="Marca"
-                                            />
-                                    </div>    
+                                            Marca *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.marca}
+                                            onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                                            disabled={false}
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                            placeholder="Marca"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-5 gap-6">
-                                     <div>
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Código SKU *
                                         </label>
@@ -514,9 +482,9 @@ const fetchOpcoes = async () => {
                                             placeholder="Ex: Chapa de Aço Galvanizada"
                                         />
                                     </div>
-                                   
+
                                 </div>
-                               
+
 
 
                                 <div className="grid grid-cols-4 gap-6">
@@ -569,7 +537,7 @@ const fetchOpcoes = async () => {
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                         >
                                             <option value="">Selecione uma unidade...</option>
-                                            
+
                                             {/* MUDANÇA AQUI: Mapeia os dados do estado */}
                                             {unidadesMedida.map((unidade) => (
                                                 <option key={unidade.id} value={unidade.id}> {/* O 'value' é o ID! */}

@@ -17,7 +17,6 @@ api.interceptors.request.use((config) => {
   if (storedState) {
     try {
       const parsedState = JSON.parse(storedState);
-      // Pega o token de acesso
       token = parsedState.state.accessToken;
     } catch (error) {
       console.error('Erro ao ler auth-storage:', error);
@@ -26,9 +25,6 @@ api.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    // console.log('✅ Token adicionado ao axios'); // Removido log redundante
-  } else {
-    // console.warn('⚠️ Token não encontrado em auth-storage'); // Removido log redundante
   }
 
   return config;
@@ -36,21 +32,14 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// REMOVIDO: O segundo interceptor de request duplicado.
-// O token é adicionado uma vez no primeiro bloco.
-
-
 // --- Interceptor de Response (Lógica de Refresh Token) ---
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isTokenError = error.response.status === 400 && error.response.data.code === 'token_not_valid';
+    const isTokenError = error.response?.status === 400 && error.response?.data?.code === 'token_not_valid';
 
-    // 1. Condição para tentar o Refresh Token: 
-    //    É um erro de token INVÁLIDO (400).
     if (isTokenError && !originalRequest._isRetry) {
-
       originalRequest._isRetry = true;
 
       const storedState = localStorage.getItem('auth-storage');
@@ -59,10 +48,7 @@ api.interceptors.response.use(
       if (storedState) {
         try {
           const parsedState = JSON.parse(storedState);
-
-          // 1. CORREÇÃO DE LEITURA: LÊ O TOKEN DA RAIZ DO OBJETO
-          refreshToken = parsedState.refresh_token; // ✅ Lendo 'refresh_token' da raiz
-
+          refreshToken = parsedState.refresh_token;
         } catch (e) {
           console.error('Erro ao parsear auth-storage para refresh:', e);
         }
@@ -70,15 +56,13 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          // 2. CORREÇÃO DE PAYLOAD: O payload DEVE USAR A CHAVE CORRETA ESPERADA PELO DJANGO (geralmente 'refresh')
           const refreshResponse = await axios.post(
             `${API_URL}/auth/token/refresh/`,
-            { refresh: refreshToken } // ✅ ENVIANDO O TOKEN LIDO NA CHAVE 'refresh'
+            { refresh: refreshToken }
           );
 
           const newAccessToken = refreshResponse.data.access;
 
-          // 3. Atualiza o Local Storage (Zustand) com o novo Access Token
           if (typeof window !== 'undefined') {
             const currentStoredState = JSON.parse(localStorage.getItem('auth-storage') || '{}');
 
@@ -86,30 +70,27 @@ api.interceptors.response.use(
               ...currentStoredState,
               state: {
                 ...currentStoredState.state,
-                accessToken: newAccessToken, // Sobrescreve apenas o access token
+                accessToken: newAccessToken,
               },
             };
             localStorage.setItem('auth-storage', JSON.stringify(updatedState));
           }
 
-          // 4. Configura o novo token na requisição original e a repete
           originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
           console.log("✅ Token de acesso renovado e requisição repetida.");
           return api(originalRequest);
 
         } catch (refreshError) {
-          // Se o refresh token falhar (ex: expirou também), redireciona/desloga.
           console.error("❌ Falha na renovação do Refresh Token. Usuário precisa logar novamente.", refreshError);
           if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth-storage'); // Limpa o token expirado/inválido
-            window.location.href = '/login'; // Redireciona o usuário para a página de login
+            localStorage.removeItem('auth-storage');
+            window.location.href = '/login';
           }
           return Promise.reject(refreshError);
         }
       }
     }
 
-    // Para todos os outros erros ou falhas de renovação
     return Promise.reject(error);
   }
 );
@@ -117,46 +98,49 @@ api.interceptors.response.use(
 
 export default api;
 
-// --- Interfaces e APIs (Mantidas inalteradas) ---
+// --- Interfaces e APIs ---
+
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  company_name?: string;
+  phone?: string;
+  created_at: string;
+  has_company: boolean;
+}
+
+export interface Empresa {
+  id: number;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+  telefone: string;
+  endereco: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Produto {
   id: number;
   nome: string;
   codigo_sku: string;
-  tipo: string
+  tipo: string;
+  tipo_nome?: string;
   unidade_medida: string;
+  unidade_medida_nome?: string;
   preco_custo: string;
   is_active: boolean;
   peso_liquido?: number;
-  peso_bruto?:number;
-  referencia?:string;
-  marca?:string;
+  peso_bruto?: number;
+  referencia?: string;
+  marca?: string;
 }
 
 export type NovoProduto = Omit<Produto, 'id' | 'is_active'>;
-
-export const authAPI = {
-  register: (data: any) => api.post('/auth/register/', data),
-  login: (email: string, password: string) =>
-    api.post('/auth/login/', { email, password }),
-  getProfile: () => api.get('/auth/profile/'),
-};
-
-export const plansAPI = {
-  list: () => api.get('/plans/'),
-  get: (slug: string) => api.get(`/plans/${slug}/`),
-};
-
-export const subscriptionsAPI = {
-  list: () => api.get('/subscriptions/'),
-  create: (plan_id: number) => api.post('/subscriptions/', { plan_id }),
-  cancel: (id: number) => api.post(`/subscriptions/${id}/cancel/`),
-  getActive: () => api.get('/subscriptions/active/'),
-};
-
-export const paymentsAPI = {
-  list: () => api.get('/payments/'),
-};
 
 export interface ItemComposicao {
   id?: number;
@@ -175,7 +159,7 @@ export interface Composicao {
 export interface TipoProdutoAPI {
   id: number;
   nome: string;
-  tipo: string; // A sigla "MP", "PA", etc.
+  tipo: string;
 }
 
 export interface UnidadeMedidaAPI {
@@ -186,36 +170,47 @@ export interface UnidadeMedidaAPI {
 
 export type NovaComposicao = Omit<Composicao, 'id'>;
 
+export const authAPI = {
+  register: (data: any) => api.post('/auth/register/', data),
+  login: (email: string, password: string) =>
+    api.post('/auth/login/', { email, password }),
+  getProfile: () => api.get<User>('/auth/profile/'),
+};
+
+export const empresaAPI = {
+  getMyCompany: () => api.get<Empresa>('/auth/empresas/me/'),
+  create: (data: Omit<Empresa, 'id' | 'created_at' | 'updated_at'>) =>
+    api.post<Empresa>('/auth/empresas/me/', data),
+};
+
+export const plansAPI = {
+  list: () => api.get('/plans/'),
+  get: (slug: string) => api.get(`/plans/${slug}/`),
+};
+
+export const subscriptionsAPI = {
+  list: () => api.get('/subscriptions/'),
+  create: (plan_id: number) => api.post('/subscriptions/', { plan_id }),
+  cancel: (id: number) => api.post(`/subscriptions/${id}/cancel/`),
+  getActive: () => api.get('/subscriptions/active/'),
+};
+
+export const paymentsAPI = {
+  list: () => api.get('/payments/'),
+};
+
 export const composicoesAPI = {
   list: () => api.get<Composicao[]>('/composicoes/'),
-
   create: (data: NovaComposicao) => api.post<Composicao>('/composicoes/', data),
-
   update: (id: number, data: NovaComposicao) =>
     api.put<Composicao>(`/composicoes/${id}/`, data),
-
   delete: (id: number) => api.delete(`/composicoes/${id}/`),
 };
 
 export const produtosAPI = {
-  /**
-   * Busca a lista de todos os produtos da empresa logada
-   */
   list: () => api.get<Produto[]>('/produtos/'),
-
-  /**
-   * Cria um novo produto no backend
-   */
   create: (data: NovoProduto) => api.post<Produto>('/produtos/', data),
-
-  /**
-   * Atualiza um produto existente no backend
-   */
   update: (id: number, data: Partial<NovoProduto>) =>
     api.put<Produto>(`/produtos/${id}/`, data),
-
-  /**
-   * Deleta um produto do backend
-   */
   delete: (id: number) => api.delete(`/produtos/${id}/`),
 };

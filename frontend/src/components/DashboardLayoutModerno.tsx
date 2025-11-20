@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from 'react';
-import { Package, DollarSign, Users, LogOut, Menu, X, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { Package, DollarSign, Users, LogOut, X, Ruler, Tag } from 'lucide-react';
+import { authAPI } from '@/lib/api';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -13,19 +15,50 @@ export default function DashboardLayoutModerno({
   title = "Dashboard",
   subtitle = ""
 }: DashboardLayoutProps) {
+  const router = useRouter();
   const [activeMenu, setActiveMenu] = useState('produtos');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isCheckingCompany, setIsCheckingCompany] = useState(true);
+
+  // Check if user has company on mount
+  useEffect(() => {
+    const checkCompany = async () => {
+      try {
+        const response = await authAPI.getProfile();
+        if (!response.data.has_company) {
+          router.push('/onboarding');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar empresa:', error);
+        // If error, redirect to login
+        router.push('/login');
+      } finally {
+        setIsCheckingCompany(false);
+      }
+    };
+
+    checkCompany();
+  }, [router]);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Package },
-    { id: 'produtos', label: 'Produtos/Insumos', icon: Package },
-    { id: 'receitas', label: 'Receitas/Composições', icon: DollarSign },
-    { id: 'orcamentos', label: 'Orçamentos', icon: DollarSign },
-    { id: 'clientes', label: 'Clientes', icon: Users }
+    { id: 'dashboard', label: 'Dashboard', icon: Package, path: '/dashboard' },
+    { id: 'produtos', label: 'Produtos/Insumos', icon: Package, path: '/dashboard/produtos' },
+    { id: 'unidades', label: 'Unidades de Medida', icon: Ruler, path: '/dashboard/unidades' },
+    { id: 'tipos', label: 'Tipos de Produto', icon: Tag, path: '/dashboard/tipos-produto' },
+    { id: 'receitas', label: 'Receitas/Composições', icon: DollarSign, path: '/dashboard/receitas' },
+    { id: 'orcamentos', label: 'Orçamentos', icon: DollarSign, path: '/dashboard/orcamentos' },
+    { id: 'clientes', label: 'Clientes', icon: Users, path: '/dashboard/clientes' }
   ];
 
+  if (isCheckingCompany) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900">
+        <div className="text-white text-xl">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
-    // Fundo base sutilmente mais escuro para contraste
     <div className="flex h-screen bg-slate-100/50">
 
       {/* Sidebar */}
@@ -34,20 +67,17 @@ export default function DashboardLayoutModerno({
         {/* Logo e Botão de Alternância */}
         <div className="p-6 flex items-center justify-between border-b border-slate-700">
 
-          {/* LÓGICA DO LOGO E CLIQUE: Permite abrir clicando no logo quando fechado */}
           <div
             className={`flex items-center gap-3 ${!sidebarOpen ? 'cursor-pointer' : ''}`}
-            onClick={() => !sidebarOpen && setSidebarOpen(true)} // Abre se estiver fechado
+            onClick={() => !sidebarOpen && setSidebarOpen(true)}
           >
             {sidebarOpen ? (
-              // Logo COMPLETO (sidebar aberta)
               <img
                 src="/valora_sf_m.png"
                 alt="Logo Valora"
                 className="h-10 w-auto"
               />
             ) : (
-              // Ícone SLIM (sidebar fechada)
               <img
                 src="/valora_sf_slim.png"
                 alt="Ícone Valora"
@@ -56,10 +86,9 @@ export default function DashboardLayoutModerno({
             )}
           </div>
 
-          {/* BOTão DE FECHAR: SÓ MOSTRA QUANDO ABERTO */}
           {sidebarOpen && (
             <button
-              onClick={() => setSidebarOpen(false)} // Função explícita para fechar
+              onClick={() => setSidebarOpen(false)}
               className="text-gray-400 hover:text-white transition-colors"
             >
               <X size={20} />
@@ -74,7 +103,12 @@ export default function DashboardLayoutModerno({
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveMenu(item.id)}
+                onClick={() => {
+                  setActiveMenu(item.id);
+                  if (item.path) {
+                    router.push(item.path);
+                  }
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeMenu === item.id
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                   : 'text-gray-400 hover:text-white hover:bg-slate-700/50'
@@ -110,14 +144,12 @@ export default function DashboardLayoutModerno({
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
 
-        {/* Header - Fundo escuro igual à sidebar */}
-        <header className="bg-slate-900 px-8 py-4"> {/* 1. Fundo slate-900 */}
+        {/* Header */}
+        <header className="bg-slate-900 px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              {/* Título em Branco */}
-              <h1 className="text-2xl font-bold text-white">{title}</h1> {/* 2. Título em Branco */}
-              {/* Subtítulo em Cinza Quase Branco */}
-              {subtitle && <p className="text-sm text-slate-300 mt-1">{subtitle}</p>} {/* 3. Subtítulo em slate-300 */}
+              <h1 className="text-2xl font-bold text-white">{title}</h1>
+              {subtitle && <p className="text-sm text-slate-300 mt-1">{subtitle}</p>}
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -126,8 +158,7 @@ export default function DashboardLayoutModerno({
           </div>
         </header>
 
-        {/* Content Area - AQUI VÃO OS CHILDREN */}
-        {/* O fundo do children (produtos.tsx) deve ser branco para se destacar do bg-slate-100 */}
+        {/* Content Area */}
         <div className="p-8">
           {children}
         </div>

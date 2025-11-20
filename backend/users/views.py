@@ -1,24 +1,15 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect
+from django.views import View
 from django.conf import settings
 from urllib.parse import urlencode
-from .serializers import UserSerializer, UserRegistrationSerializer
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-from django.shortcuts import redirect
-from django.views import View  # ADICIONE ESTA LINHA
-from django.conf import settings
-from urllib.parse import urlencode
-from .serializers import UserSerializer, UserRegistrationSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, EmpresaSerializer
+from .models import Empresa
 
-# ... resto do código ...
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
@@ -85,6 +76,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+
 class SocialLoginRedirectView(View):
     """
     View que intercepta o redirect do allauth e gera os tokens JWT
@@ -113,7 +105,8 @@ class SocialLoginRedirectView(View):
         # Se não autenticado, volta pro login
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         return redirect(f"{frontend_url}/login?error=authentication_failed")
-# NOVA VIEW PARA CALLBACK DO GOOGLE
+
+
 class GoogleLoginCallbackView(APIView):
     """
     View customizada para processar o callback do Google e gerar JWT
@@ -142,3 +135,35 @@ class GoogleLoginCallbackView(APIView):
         redirect_url = f"{frontend_url}/auth/callback?{params}"
         
         return redirect(redirect_url)
+
+
+class MyEmpresaView(APIView):
+    """
+    Get or create the current user's company
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            empresa = Empresa.objects.get(owner=request.user)
+            serializer = EmpresaSerializer(empresa)
+            return Response(serializer.data)
+        except Empresa.DoesNotExist:
+            return Response(
+                {'detail': 'Empresa não encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def post(self, request):
+        # Check if user already has a company
+        if Empresa.objects.filter(owner=request.user).exists():
+            return Response(
+                {'detail': 'Usuário já possui uma empresa cadastrada'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = EmpresaSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
