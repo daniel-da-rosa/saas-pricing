@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import api, { produtosAPI, Produto } from '../../lib/api';
 import DashboardLayoutModerno from '../../components/DashboardLayoutModerno';
 import { Search, Plus, Edit2, Trash2, X, Package } from 'lucide-react';
-
-//importação do dialog 
 import {
     AlertDialog,
     AlertDialogTrigger,
@@ -15,8 +13,7 @@ import {
     AlertDialogFooter,
     AlertDialogCancel,
     AlertDialogAction,
-} from "@/components/ui/alert-dialog"
-
+} from "@/components/ui/alert-dialog";
 
 const PaginaProdutos = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -32,7 +29,6 @@ const PaginaProdutos = () => {
     const [unidadesMedida, setUnidadesMedida] = useState<any[]>([]);
     const itemsPerPage = 10;
 
-    // Form state
     const [formData, setFormData] = useState({
         nome: '',
         codigo_sku: '',
@@ -81,7 +77,6 @@ const PaginaProdutos = () => {
         carregarProdutos();
     }, []);
 
-    // Filtro de busca
     useEffect(() => {
         const filtered = produtos.filter(produto =>
             produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,7 +88,6 @@ const PaginaProdutos = () => {
         setCurrentPage(1);
     }, [searchTerm, produtos]);
 
-    // Paginação
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = produtosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
@@ -176,9 +170,7 @@ const PaginaProdutos = () => {
             title="Produtos e Insumos"
             subtitle="Gerencie o cadastro de matérias-primas, embalagens e insumos"
         >
-            {/* Barra de ações */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 flex gap-4 items-center flex-wrap">
-                {/* Busca */}
                 <div className="flex-1 min-w-[300px] relative">
                     <Search
                         size={18}
@@ -193,7 +185,6 @@ const PaginaProdutos = () => {
                     />
                 </div>
 
-                {/* Botão Novo */}
                 <button
                     onClick={handleNovo}
                     className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
@@ -203,7 +194,6 @@ const PaginaProdutos = () => {
                 </button>
             </div>
 
-            {/* Tabela */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {isLoading ? (
                     <div className="py-16 text-center">
@@ -301,7 +291,6 @@ const PaginaProdutos = () => {
                                                     <Edit2 size={16} />
                                                 </button>
 
-                                                {/* ALERT DIALOG DE EXCLUSÃO */}
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <button
@@ -362,13 +351,11 @@ const PaginaProdutos = () => {
                                                 </AlertDialog>
                                             </div>
                                         </td>
-
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
 
-                        {/* Paginação */}
                         {totalPages > 1 && (
                             <div className="px-5 py-4 border-t border-gray-200 flex justify-between items-center">
                                 <p className="text-sm text-gray-600">
@@ -396,46 +383,36 @@ const PaginaProdutos = () => {
                 )}
             </div>
 
-            {/* Modal de Formulário */}
             {showModal && (
-                <div
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                // onClick={() => setShowModal(false)}
-                >
-                    <div
-                        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl"
-                    //onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div className="px-6 py-5 bg-slate-900 flex justify-start items-center rounded-t-2xl">
-                            <h2 className="text-xl font-bold text-white">
-                                {modalMode === 'create' ? 'Novo Produto' : 'Editar Produto'}
-                            </h2>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto shadow-2xl">
+                        <div className="px-6 py-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-800">
+                                    {modalMode === 'create' ? 'Novo Produto' : 'Editar Produto'}
+                                </h2>
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                        </div>
-
-
-
-                        {/* Formulário */}
-                        <div className="px-6 py-6 bg-gray-100">
                             <div className="space-y-5">
-
                                 <div className='grid grid-cols-4 gap-6'>
-
                                     <div className='col-span-3'>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Tipo *
                                         </label>
                                         <select
-                                            value={formData.tipo} // O 'value' agora é o ID (ex: 1)
+                                            value={formData.tipo}
                                             onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                         >
                                             <option value="">Selecione um tipo...</option>
-
-                                            {/* MUDANÇA AQUI: Mapeia os dados do estado */}
                                             {tiposProduto.map((tipo) => (
-                                                <option key={tipo.id} value={tipo.id}> {/* O 'value' é o ID! */}
+                                                <option key={tipo.id} value={tipo.id}>
                                                     {tipo.nome} ({tipo.tipo})
                                                 </option>
                                             ))}
@@ -449,7 +426,6 @@ const PaginaProdutos = () => {
                                             type="text"
                                             value={formData.marca}
                                             onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                                            disabled={false}
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                             placeholder="Marca"
                                         />
@@ -472,7 +448,7 @@ const PaginaProdutos = () => {
                                     </div>
                                     <div className='col-span-4'>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Nome do Produtos *
+                                            Nome do Produto *
                                         </label>
                                         <input
                                             type="text"
@@ -482,10 +458,7 @@ const PaginaProdutos = () => {
                                             placeholder="Ex: Chapa de Aço Galvanizada"
                                         />
                                     </div>
-
                                 </div>
-
-
 
                                 <div className="grid grid-cols-4 gap-6">
                                     <div>
@@ -513,7 +486,8 @@ const PaginaProdutos = () => {
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                             placeholder="0,00"
                                         />
-                                    </div><div>
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Peso Bruto (KG) *
                                         </label>
@@ -526,21 +500,18 @@ const PaginaProdutos = () => {
                                             placeholder="0,00"
                                         />
                                     </div>
-                                    {/* MUDANÇA AQUI: 'input' virou 'select' */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Unidade de Medida *
                                         </label>
                                         <select
-                                            value={formData.unidade_medida} // O 'value' agora é o ID (ex: 3)
+                                            value={formData.unidade_medida}
                                             onChange={(e) => setFormData({ ...formData, unidade_medida: e.target.value })}
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
                                         >
                                             <option value="">Selecione uma unidade...</option>
-
-                                            {/* MUDANÇA AQUI: Mapeia os dados do estado */}
                                             {unidadesMedida.map((unidade) => (
-                                                <option key={unidade.id} value={unidade.id}> {/* O 'value' é o ID! */}
+                                                <option key={unidade.id} value={unidade.id}>
                                                     {unidade.nome} ({unidade.sigla})
                                                 </option>
                                             ))}
@@ -549,7 +520,6 @@ const PaginaProdutos = () => {
                                 </div>
                             </div>
 
-                            {/* Botões */}
                             <div className="mt-8 flex gap-3 justify-end">
                                 <button
                                     onClick={() => setShowModal(false)}

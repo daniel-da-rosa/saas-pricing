@@ -1,7 +1,8 @@
 # Em backend/pricing/views.py
 from rest_framework import viewsets, permissions
-from .models import Produto, Composicao,TipoProduto,UnidadeMedida,Empresa
-from .serializers import ProdutoSerializer, ComposicaoSerializer, UnidadeMedidaSerializer,TipoProdutoSerializer
+from rest_framework.exceptions import ValidationError
+from .models import Produto, Composicao, TipoProduto, UnidadeMedida, Empresa
+from .serializers import ProdutoSerializer, ComposicaoSerializer, UnidadeMedidaSerializer, TipoProdutoSerializer
 
 class ProdutoViewSet(viewsets.ModelViewSet):
     """
@@ -69,9 +70,9 @@ class ComposicaoViewSet(viewsets.ModelViewSet):
         empresa = self.request.user.owned_empresas.first()
         serializer.save(empresa=empresa)
 
-class TipoProdutoViewSet(viewsets.ReadOnlyModelViewSet):
+class TipoProdutoViewSet(viewsets.ModelViewSet):
     """
-    API endpoint (somente-leitura) que lista os Tipos de Produto.
+    API endpoint que lista e cria os Tipos de Produto.
     """
     serializer_class = TipoProdutoSerializer
     
@@ -81,7 +82,6 @@ class TipoProdutoViewSet(viewsets.ReadOnlyModelViewSet):
         
         try:
             # 2. Encontra a empresa que este usuário é dono
-            #    (Exatamente como você explicou)
             empresa_do_usuario = Empresa.objects.get(owner_id=user.id)
         except Empresa.DoesNotExist:
             # Se o usuário não for dono de nenhuma, não retorna nada
@@ -90,9 +90,20 @@ class TipoProdutoViewSet(viewsets.ReadOnlyModelViewSet):
         # 3. Filtra os Tipos de Produto por essa empresa
         return TipoProduto.objects.filter(empresa=empresa_do_usuario)
 
-class UnidadeMedidaViewSet(viewsets.ReadOnlyModelViewSet):
+    def perform_create(self, serializer):
+        """
+        Injeta a empresa do usuário logado ANTES de salvar 
+        """
+        user = self.request.user
+        try:
+            empresa_do_usuario = Empresa.objects.get(owner_id=user.id)
+            serializer.save(empresa=empresa_do_usuario)
+        except Empresa.DoesNotExist:
+            raise ValidationError("O usuário atual não está associado a nenhuma empresa.")
+
+class UnidadeMedidaViewSet(viewsets.ModelViewSet):
     """
-    API endpoint (somente-leitura) que lista as Unidades de Medida.
+    API endpoint que lista e cria as Unidades de Medida.
     """
     serializer_class = UnidadeMedidaSerializer
     
@@ -108,3 +119,14 @@ class UnidadeMedidaViewSet(viewsets.ReadOnlyModelViewSet):
 
         # 3. Filtra as Unidades por essa empresa
         return UnidadeMedida.objects.filter(empresa=empresa_do_usuario)
+
+    def perform_create(self, serializer):
+        """
+        Injeta a empresa do usuário logado ANTES de salvar 
+        """
+        user = self.request.user
+        try:
+            empresa_do_usuario = Empresa.objects.get(owner_id=user.id)
+            serializer.save(empresa=empresa_do_usuario)
+        except Empresa.DoesNotExist:
+            raise ValidationError("O usuário atual não está associado a nenhuma empresa.")

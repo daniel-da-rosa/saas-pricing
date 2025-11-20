@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import DashboardLayoutModerno from '../../components/DashboardLayoutModerno';
-import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Package, X } from 'lucide-react';
 
 import {
     AlertDialog,
@@ -302,15 +302,21 @@ const PaginaUnidades = () => {
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
                     <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-                        <div className="px-6 py-5 bg-slate-900 flex justify-start items-center rounded-t-2xl">
+                        <div className="px-6 py-5 bg-slate-900 flex justify-between items-center rounded-t-2xl">
                             <h2 className="text-xl font-bold text-white">
                                 {modalMode === 'create' ? 'Nova Unidade de Medida' : 'Editar Unidade de Medida'}
                             </h2>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="text-white/70 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
 
-                        <div className="px-6 py-6 bg-gray-100">
+                        <div className="px-6 py-6 bg-gray-50">
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -342,7 +348,7 @@ const PaginaUnidades = () => {
                             <div className="mt-6 flex gap-3 justify-end">
                                 <button
                                     onClick={() => setShowModal(false)}
-                                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
                                 >
                                     Cancelar
                                 </button>

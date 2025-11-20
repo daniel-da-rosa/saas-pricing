@@ -107,11 +107,13 @@ class TipoProdutoSerializer(serializers.ModelSerializer):
     """Serializer do tipo de produto"""
     class Meta:
         model = TipoProduto
-        fields = ['id', 'nome', 'tipo']
+        fields = ['id', 'empresa', 'nome', 'tipo']
+        read_only_fields = ['empresa']
 
 
 class UnidadeMedidaSerializer(serializers.ModelSerializer):
     """Serializa a unidade de medida"""
     class Meta:
         model = UnidadeMedida
-        fields = ['id', 'nome', 'sigla']
+        fields = ['id', 'empresa', 'nome', 'sigla']
+        read_only_fields = ['empresa']
