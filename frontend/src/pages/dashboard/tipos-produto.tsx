@@ -121,10 +121,11 @@ const PaginaTiposProduto = () => {
     };
 
     return (
-        <DashboardLayoutModerno
-            title="Tipos de Produto"
-            subtitle="Gerencie os tipos de produto utilizados no sistema"
-        >
+        <>
+            <DashboardLayoutModerno
+                title="Tipos de Produto"
+                subtitle="Gerencie os tipos de produto utilizados no sistema"
+            >
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 flex gap-4 items-center flex-wrap">
                 <div className="flex-1 min-w-[300px] relative">
                     <Search
@@ -301,9 +302,11 @@ const PaginaTiposProduto = () => {
                 )}
             </div>
 
+            </DashboardLayoutModerno>
+
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-md w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
                         <div className="px-6 py-5 bg-slate-900 flex justify-between items-center rounded-t-2xl">
                             <h2 className="text-xl font-bold text-white">
                                 {modalMode === 'create' ? 'Novo Tipo de Produto' : 'Editar Tipo de Produto'}
@@ -363,7 +366,7 @@ const PaginaTiposProduto = () => {
                     </div>
                 </div>
             )}
-        </DashboardLayoutModerno>
+        </>
     );
 };
 
