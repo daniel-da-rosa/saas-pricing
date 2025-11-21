@@ -166,226 +166,229 @@ const PaginaProdutos = () => {
     };
 
     return (
-        <DashboardLayoutModerno
-            title="Produtos e Insumos"
-            subtitle="Gerencie o cadastro de matérias-primas, embalagens e insumos"
-        >
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 flex gap-4 items-center flex-wrap">
-                <div className="flex-1 min-w-[300px] relative">
-                    <Search
-                        size={18}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nome, SKU ou tipo..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    />
+        <>
+            <DashboardLayoutModerno
+                title="Produtos e Insumos"
+                subtitle="Gerencie o cadastro de matérias-primas, embalagens e insumos"
+            >
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 flex gap-4 items-center flex-wrap">
+                    <div className="flex-1 min-w-[300px] relative">
+                        <Search
+                            size={18}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Buscar por nome, SKU ou tipo..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        />
+                    </div>
+
+                    <button
+                        onClick={handleNovo}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                        <Plus size={18} />
+                        Novo Produto
+                    </button>
                 </div>
 
-                <button
-                    onClick={handleNovo}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
-                >
-                    <Plus size={18} />
-                    Novo Produto
-                </button>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                {isLoading ? (
-                    <div className="py-16 text-center">
-                        <div className="text-5xl mb-3">⏳</div>
-                        <p className="text-gray-500">Carregando produtos...</p>
-                    </div>
-                ) : error ? (
-                    <div className="py-10 px-6 text-center">
-                        <p className="text-red-600">⚠️ {error}</p>
-                    </div>
-                ) : produtosFiltrados.length === 0 ? (
-                    <div className="py-16 text-center">
-                        <Package size={48} className="text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 mb-2">
-                            {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                            {searchTerm ? 'Tente buscar com outros termos' : 'Clique em "Novo Produto" para começar'}
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-gray-200 bg-gray-50">
-                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        SKU
-                                    </th>
-                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Nome do Produto
-                                    </th>
-                                    <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Tipo
-                                    </th>
-                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Unidade
-                                    </th>
-                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Peso
-                                    </th>
-                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Marca
-                                    </th>
-                                    <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                        Unitário
-                                    </th>
-                                    <th className="text-center py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[10px]">
-                                        Ações
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.map((produto) => (
-                                    <tr
-                                        key={produto.id}
-                                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="py-0.5 px-3">
-                                            <code className="text-xs font-mono text-gray-700  px-2 py-1 rounded">
-                                                {produto.codigo_sku}
-                                            </code>
-                                        </td>
-                                        <td className="py-0.5 px-4 text-xs font-medium text-gray-900">
-                                            {produto.nome}
-                                        </td>
-                                        <td className="py-0.5 px-4">
-                                            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${produto.tipo === 'Matéria-Prima'
-                                                ? 'bg-blue-100 text-blue-700'
-                                                : produto.tipo === 'MP'
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : 'bg-amber-100 text-amber-700'
-                                                }`}>
-                                                {produto.tipo_nome}
-                                            </span>
-                                        </td>
-                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                            {produto.unidade_medida_nome}
-                                        </td>
-                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                            {produto.peso_liquido}
-                                        </td>
-                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                            {produto.marca}
-                                        </td>
-                                        <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
-                                            R$ {parseFloat(produto.preco_custo).toFixed(2)}
-                                        </td>
-                                        <td className="py-0.5 px-4">
-                                            <div className="flex gap-2 justify-center">
-                                                <button
-                                                    onClick={() => handleEditar(produto)}
-                                                    className="p-1.5 border border-gray-300 rounded-md hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 text-gray-600 transition-all"
-                                                    title="Editar"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <button
-                                                            className="p-1.5 border border-gray-300 rounded-md hover:bg-red-50 hover:border-red-500 hover:text-red-600 text-gray-600 transition-all"
-                                                            title="Excluir"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <div>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Tem certeza que deseja excluir?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Essa ação não pode ser desfeita. O produto será removido permanentemente do sistema.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-
-                                                            <div style={{
-                                                                padding: '12px',
-                                                                background: 'rgba(239, 68, 68, 0.15)',
-                                                                borderRadius: '8px',
-                                                                border: '1px solid rgba(239, 68, 68, 0.4)',
-                                                                marginTop: '16px'
-                                                            }}>
-                                                                <p style={{
-                                                                    color: '#ef4444',
-                                                                    fontWeight: '600',
-                                                                    marginBottom: '8px',
-                                                                    fontSize: '14px'
-                                                                }}>
-                                                                    Produto a ser excluído:
-                                                                </p>
-                                                                <p style={{
-                                                                    color: '#d1d5db',
-                                                                    margin: '4px 0',
-                                                                    fontSize: '14px'
-                                                                }}>
-                                                                    <strong style={{ color: '#9ca3af' }}>SKU:</strong> {produto.codigo_sku}
-                                                                </p>
-                                                                <p style={{
-                                                                    color: '#d1d5db',
-                                                                    margin: '4px 0',
-                                                                    fontSize: '14px'
-                                                                }}>
-                                                                    <strong style={{ color: '#9ca3af' }}>Nome:</strong> {produto.nome}
-                                                                </p>
-                                                            </div>
-
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(produto.id)}>
-                                                                    Excluir
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </div>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </div>
-                                        </td>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    {isLoading ? (
+                        <div className="py-16 text-center">
+                            <div className="text-5xl mb-3">⏳</div>
+                            <p className="text-gray-500">Carregando produtos...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="py-10 px-6 text-center">
+                            <p className="text-red-600">⚠️ {error}</p>
+                        </div>
+                    ) : produtosFiltrados.length === 0 ? (
+                        <div className="py-16 text-center">
+                            <Package size={48} className="text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-2">
+                                {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                                {searchTerm ? 'Tente buscar com outros termos' : 'Clique em "Novo Produto" para começar'}
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="border-b border-gray-200 bg-gray-50">
+                                        <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            SKU
+                                        </th>
+                                        <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Nome do Produto
+                                        </th>
+                                        <th className="text-left py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Tipo
+                                        </th>
+                                        <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Unidade
+                                        </th>
+                                        <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Peso
+                                        </th>
+                                        <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Marca
+                                        </th>
+                                        <th className="text-right py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                            Unitário
+                                        </th>
+                                        <th className="text-center py-1.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[10px]">
+                                            Ações
+                                        </th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {currentItems.map((produto) => (
+                                        <tr
+                                            key={produto.id}
+                                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td className="py-0.5 px-3">
+                                                <code className="text-xs font-mono text-gray-700  px-2 py-1 rounded">
+                                                    {produto.codigo_sku}
+                                                </code>
+                                            </td>
+                                            <td className="py-0.5 px-4 text-xs font-medium text-gray-900">
+                                                {produto.nome}
+                                            </td>
+                                            <td className="py-0.5 px-4">
+                                                <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${produto.tipo === 'Matéria-Prima'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : produto.tipo === 'MP'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : 'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {produto.tipo_nome}
+                                                </span>
+                                            </td>
+                                            <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                                {produto.unidade_medida_nome}
+                                            </td>
+                                            <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                                {produto.peso_liquido}
+                                            </td>
+                                            <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                                {produto.marca}
+                                            </td>
+                                            <td className="py-0.5 px-4 text-right text-sm font-semibold text-gray-900">
+                                                R$ {parseFloat(produto.preco_custo).toFixed(2)}
+                                            </td>
+                                            <td className="py-0.5 px-4">
+                                                <div className="flex gap-2 justify-center">
+                                                    <button
+                                                        onClick={() => handleEditar(produto)}
+                                                        className="p-1.5 border border-gray-300 rounded-md hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 text-gray-600 transition-all"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
 
-                        {totalPages > 1 && (
-                            <div className="px-5 py-4 border-t border-gray-200 flex justify-between items-center">
-                                <p className="text-sm text-gray-600">
-                                    Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, produtosFiltrados.length)} de {produtosFiltrados.length}
-                                </p>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                    >
-                                        Anterior
-                                    </button>
-                                    <button
-                                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                    >
-                                        Próxima
-                                    </button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <button
+                                                                className="p-1.5 border border-gray-300 rounded-md hover:bg-red-50 hover:border-red-500 hover:text-red-600 text-gray-600 transition-all"
+                                                                title="Excluir"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <div>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Tem certeza que deseja excluir?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Essa ação não pode ser desfeita. O produto será removido permanentemente do sistema.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+
+                                                                <div style={{
+                                                                    padding: '12px',
+                                                                    background: 'rgba(239, 68, 68, 0.15)',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                                                                    marginTop: '16px'
+                                                                }}>
+                                                                    <p style={{
+                                                                        color: '#ef4444',
+                                                                        fontWeight: '600',
+                                                                        marginBottom: '8px',
+                                                                        fontSize: '14px'
+                                                                    }}>
+                                                                        Produto a ser excluído:
+                                                                    </p>
+                                                                    <p style={{
+                                                                        color: '#d1d5db',
+                                                                        margin: '4px 0',
+                                                                        fontSize: '14px'
+                                                                    }}>
+                                                                        <strong style={{ color: '#9ca3af' }}>SKU:</strong> {produto.codigo_sku}
+                                                                    </p>
+                                                                    <p style={{
+                                                                        color: '#d1d5db',
+                                                                        margin: '4px 0',
+                                                                        fontSize: '14px'
+                                                                    }}>
+                                                                        <strong style={{ color: '#9ca3af' }}>Nome:</strong> {produto.nome}
+                                                                    </p>
+                                                                </div>
+
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(produto.id)}>
+                                                                        Excluir
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </div>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {totalPages > 1 && (
+                                <div className="px-5 py-4 border-t border-gray-200 flex justify-between items-center">
+                                    <p className="text-sm text-gray-600">
+                                        Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, produtosFiltrados.length)} de {produtosFiltrados.length}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                        >
+                                            Anterior
+                                        </button>
+                                        <button
+                                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                        >
+                                            Próxima
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </DashboardLayoutModerno>
+
 
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto shadow-2xl">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-4xl w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-2xl">
                         <div className="px-6 py-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold text-gray-800">
@@ -538,8 +541,9 @@ const PaginaProdutos = () => {
                     </div>
                 </div>
             )}
-        </DashboardLayoutModerno>
+        </>
     );
 };
 
 export default PaginaProdutos;
+
